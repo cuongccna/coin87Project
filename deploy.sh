@@ -28,7 +28,34 @@ fi
 # 1. System Updates & Dependencies
 echo ">>> Installing specific system dependencies..."
 sudo apt-get update
-sudo apt-get install -y python3-venv python3-pip python3-dev build-essential nodejs npm postgresql-client
+sudo apt-get install -y python3-venv python3-pip python3-dev build-essential nodejs npm postgresql postgresql-contrib postgresql-client
+
+# 1.5 Database Setup (Fix Permissions)
+echo ">>> Ensuring Database & User permissions..."
+DB_NAME="coin87_db"
+DB_USER="coin87_user"
+# Password should ideally match what is in .env or hardcoded here for the initial setup
+DB_PASS="Cuongnv123456"
+
+if sudo -u postgres psql -c "SELECT 1;" &> /dev/null; then
+    # Create User
+    sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname = '$DB_USER'" | grep -q 1 || \
+        sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
+    
+    # Create Database
+    sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" | grep -q 1 || \
+        sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+
+    # Grant Privileges
+    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+    # Critical fix for Schema Public access
+    sudo -u postgres psql -d $DB_NAME -c "GRANT ALL ON SCHEMA public TO $DB_USER;"
+    
+    echo "Database permissions verified."
+else
+    echo "WARNING: Could not connect to Postgres as sudo. setup skipped."
+fi
+
 
 # 2. Verify Node.js version (PM2 needs Node)
 echo ">>> Checking Node.js..."
