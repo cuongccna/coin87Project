@@ -79,6 +79,14 @@ if [ -f "config/nginx/cbottrading.cloud.conf" ]; then
         sudo ln -s /etc/nginx/sites-available/cbottrading.cloud /etc/nginx/sites-enabled/
     fi
     
+    # Ensure webroot for Certbot exists
+    if [ ! -d "/var/www/html" ]; then
+        echo "Creating /var/www/html for Certbot..."
+        sudo mkdir -p /var/www/html
+        sudo chown -R $USER:$USER /var/www/html
+        sudo chmod -R 755 /var/www/html
+    fi
+    
     # Test and Reload
     sudo nginx -t && sudo systemctl reload nginx
     echo "Nginx configured successfully."
