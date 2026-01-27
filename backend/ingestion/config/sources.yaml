@@ -1,0 +1,64 @@
+sources:
+  coindesk_rss:
+    enabled: true
+    type: rss
+    name: CoinDesk
+    url: https://www.coindesk.com/arc/outboundfeeds/rss/
+    rate_limit_seconds: 15
+    proxy: false
+    priority: low
+
+  cointelegraph_rss:
+    enabled: true
+    type: rss
+    name: Cointelegraph
+    url: https://cointelegraph.com/rss
+    rate_limit_seconds: 15
+    proxy: false
+    priority: low
+
+  theblock_rss:
+    enabled: false
+    type: rss
+    name: The Block
+    url: https://www.theblock.co/rss.xml
+    rate_limit_seconds: 20
+    proxy: false
+    priority: low
+
+  cryptopanic_rss:
+    enabled: false
+    type: rss
+    name: CryptoPanic
+    url: https://cryptopanic.com/feed/
+    rate_limit_seconds: 20
+    proxy: false
+    priority: low
+
+  github_releases_bitcoin:
+    enabled: false
+    type: github
+    name: GitHub Releases (bitcoin/bitcoin)
+    url: https://github.com/bitcoin/bitcoin/releases.atom
+    rate_limit_seconds: 60
+    proxy: false
+    priority: low
+
+  telegram_skeleton:
+    enabled: false
+    type: telegram
+    name: Telegram (skeleton)
+    url: ""
+    rate_limit_seconds: 60
+    proxy: false
+    priority: low
+
+  reddit_skeleton:
+    enabled: false
+    type: reddit
+    name: Reddit (skeleton)
+    url: ""
+    rate_limit_seconds: 60
+    proxy: false
+    priority: low
+

@@ -1,0 +1,13 @@
+version: "2026-01-26"
+
+# Deterministic keyword rules for timing distortion.
+# Conservative: default posture DELAY, severity LOW.
+
+timing_distortion:
+  - id: "timing_urgent_now"
+    name: "Urgency / immediate action framing"
+    keywords: ["act now", "right now", "immediately", "last chance", "before it's too late"]
+    base_severity: 1
+    posture: "DELAY"
+    affected_decisions: ["timing"]
+

@@ -1,0 +1,14 @@
+/* TailwindCSS will own the majority of styling (neutral palette).
+   This file is intentionally minimal and institutional.
+*/
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: light structural defaults */
+html,
+body {
+  height: 100%;
+}
+

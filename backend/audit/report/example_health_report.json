@@ -1,0 +1,79 @@
+{
+  "run_time": "2026-01-26T00:00:00+00:00",
+  "overall_status": "DEGRADED",
+  "checks": [
+    {
+      "name": "data_freshness_check",
+      "status": "OK",
+      "details": {
+        "last_information_event_at": null,
+        "last_risk_event_at": null,
+        "last_snapshot_at": null,
+        "warnings": []
+      }
+    },
+    {
+      "name": "data_volume_sanity_check",
+      "status": "OK",
+      "details": {
+        "window_hours": 24,
+        "information_events_24h": 0,
+        "decision_risk_events_24h": 0,
+        "snapshots_24h": 0,
+        "narrative_clusters_total": 0,
+        "warnings": [],
+        "baseline_used": false
+      }
+    },
+    {
+      "name": "enum_constraint_integrity_check",
+      "status": "OK",
+      "details": {
+        "orphaned_decision_risk_events": 0,
+        "orphaned_narrative_memberships": 0,
+        "null_information_events_source_ref": 0,
+        "invalid_decision_risk_type": 0,
+        "invalid_environment_state": 0,
+        "warnings": []
+      }
+    },
+    {
+      "name": "immutability_safety_check",
+      "status": "DEGRADED",
+      "details": {
+        "checked_tables": [],
+        "future_snapshots": 0,
+        "warnings": [
+          "Immutability cannot be cryptographically proven without DB-level audit triggers/WAL retention; this check is schema+sanity only."
+        ]
+      }
+    },
+    {
+      "name": "snapshot_consistency_check",
+      "status": "OK",
+      "details": {
+        "recent_checked": 0,
+        "adjacent_duplicate_count": 0,
+        "snapshots_24h": 0,
+        "warnings": []
+      }
+    },
+    {
+      "name": "re_evaluation_transparency_check",
+      "status": "OK",
+      "details": {
+        "narrative_clusters_total": 0,
+        "active_high_saturation_count": 0,
+        "re_evaluation_logs_narratives_30d": 0,
+        "warnings": []
+      }
+    }
+  ],
+  "warnings": [],
+  "recommended_actions": [
+    "If freshness warnings exist: verify Task Scheduler jobs A/B/C are running and network egress is available.",
+    "If integrity warnings exist: treat as governance incident; do not auto-fix. Investigate DB constraints and write paths.",
+    "If immutability warning exists: consider adding DB-level audit triggers or retaining WAL for forensic review."
+  ]
+}
+

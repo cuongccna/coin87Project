@@ -1,0 +1,13 @@
+version: "2026-01-26"
+
+# Deterministic keyword rules for consensus pressure (mapped to CONSENSUS_TRAP).
+# Conservative: LOW severity by default.
+
+consensus_pressure:
+  - id: "cons_all_analysts"
+    name: "Analyst unanimity / consensus framing"
+    keywords: ["all analysts", "everyone agrees", "consensus", "unanimous", "no one doubts"]
+    base_severity: 1
+    posture: "REVIEW"
+    affected_decisions: ["sizing", "timing"]
+

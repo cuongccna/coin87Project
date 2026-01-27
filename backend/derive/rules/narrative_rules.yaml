@@ -1,0 +1,20 @@
+version: "2026-01-26"
+
+# Deterministic keyword rules for narrative contamination detection.
+# No sentiment, no scoring. Conservative defaults.
+
+narratives:
+  - id: "narr_etf_sec"
+    theme: "ETF/Regulatory approval narrative"
+    keywords: ["etf", "sec", "approval", "filing"]
+    base_severity: 1
+    posture: "REVIEW"
+    affected_decisions: ["allocation", "timing"]
+
+  - id: "narr_exchange_outage"
+    theme: "Exchange stability narrative"
+    keywords: ["outage", "halt", "maintenance", "downtime"]
+    base_severity: 1
+    posture: "REVIEW"
+    affected_decisions: ["timing", "execution"]
+
