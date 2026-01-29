@@ -26,7 +26,7 @@ export function HomeHeader({ snapshot }: { snapshot: HomeSnapshot }) {
           />
         </div>
         <span className="text-xxs text-secondary font-mono">
-          CLARITY {snapshot.clarity_score}%
+          CLARITY {Math.round(snapshot.clarity_score)}%
         </span>
       </div>
     </div>
