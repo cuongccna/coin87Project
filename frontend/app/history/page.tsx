@@ -13,7 +13,6 @@ export default async function HistoryPage() {
 
     const items = await api.listDecisionHistory(
       { start_time: start.toISOString(), end_time: end.toISOString() },
-      600,
     );
 
     return (

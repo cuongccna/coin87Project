@@ -7,7 +7,7 @@ export const revalidate = 300;
 
 export default async function NarrativeDetailPage({ params }: { params: { id: string } }) {
   try {
-    const n = await api.getNarrative(params.id, 300);
+    const n = await api.getNarrative(params.id);
 
     return (
       <div className="vStack">

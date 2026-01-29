@@ -8,7 +8,7 @@ export const revalidate = 300;
 
 export default async function RiskEventsPage() {
   try {
-    const risks = await api.listRiskEvents({ min_severity: 3 }, 300);
+    const risks = await api.listRiskEvents({ min_severity: 3 });
 
     return (
       <div className="vStack">

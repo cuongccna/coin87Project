@@ -8,7 +8,7 @@ export const revalidate = 600;
 
 export default async function NarrativesPage() {
   try {
-    const narratives = await api.listNarratives({ min_saturation: 2, active_only: true }, 600);
+    const narratives = await api.listNarratives({ min_saturation: 2, active_only: true });
 
     // NOTE: "linked risk count" is not provided by list endpoint.
     // We keep this page low-noise by not fan-out calling detail per narrative.

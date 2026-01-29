@@ -8,7 +8,7 @@ export const revalidate = 300;
 
 export default async function HistoryDetailPage({ params }: { params: { contextId: string } }) {
   try {
-    const item = await api.getDecisionHistoryItem(params.contextId, 300);
+    const item = await api.getDecisionHistoryItem(params.contextId);
 
     return (
       <div className="vStack">
