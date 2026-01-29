@@ -39,7 +39,7 @@ export default async function HomePage() {
   let data: InformationReliabilityResponse;
 
   try {
-    data = await api.getInformationReliability("MARKET", 60);
+    data = await api.getInformationReliability("MARKET");
   } catch (err) {
     console.error("Failed to fetch market intel:", err);
     data = {
