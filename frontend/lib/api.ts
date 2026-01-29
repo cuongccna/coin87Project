@@ -7,102 +7,70 @@ import type {
 } from "./types";
 import type { InformationReliabilityResponse } from "./marketTypes";
 
-const API_BASE_URL = process.env.C87_API_BASE_URL;
-const API_TOKEN = process.env.C87_UI_BEARER_TOKEN;
-
-function assertEnv() {
-  if (!API_BASE_URL) throw new Error("Missing env C87_API_BASE_URL (set in frontend/.env.local).");
-  if (!API_TOKEN) throw new Error("Missing env C87_UI_BEARER_TOKEN (set in frontend/.env.local).");
-}
+/* Always use public env in App Router runtime */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
+const API_TOKEN = process.env.NEXT_PUBLIC_UI_BEARER_TOKEN!;
 
 type FetchOpts = { revalidateSeconds?: number };
 
 async function apiGet<T>(path: string, opts: FetchOpts = {}): Promise<T> {
-  assertEnv();
+  if (!API_BASE_URL || !API_TOKEN) {
+    throw new Error("Missing NEXT_PUBLIC_API_BASE_URL or NEXT_PUBLIC_UI_BEARER_TOKEN");
+  }
+
   const url = `${API_BASE_URL}${path}`;
+
   const res = await fetch(url, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${API_TOKEN}`,
       "Content-Type": "application/json",
-      "X-Request-Id": crypto.randomUUID(),
     },
-    next: { revalidate: opts.revalidateSeconds ?? 300 },
+    cache: "no-store",   // 🚨 IMPORTANT: disable Next cache
   });
 
   if (!res.ok) throw new Error(`HTTP_${res.status}`);
-  return (await res.json()) as T;
+  return res.json();
 }
 
 export const api = {
-  getDecisionEnvironment: (revalidateSeconds?: number) =>
-    apiGet<DecisionEnvironmentResponse>("/v1/decision/environment", {
-      revalidateSeconds,
-    }),
+  getDecisionEnvironment: () =>
+    apiGet<DecisionEnvironmentResponse>("/v1/decision/environment"),
 
-  getDecisionEnvironmentAt: (isoTimestamp: string, revalidateSeconds?: number) =>
+  getDecisionEnvironmentAt: (isoTimestamp: string) =>
     apiGet<DecisionEnvironmentResponse>(
-      `/v1/decision/environment/${encodeURIComponent(isoTimestamp)}`,
-      { revalidateSeconds },
+      `/v1/decision/environment/${encodeURIComponent(isoTimestamp)}`
     ),
 
-  listRiskEvents: (
-    params: { min_severity?: number; decision_type?: string; at_time?: string },
-    revalidateSeconds?: number,
-  ) => {
+  listRiskEvents: (params: { min_severity?: number; decision_type?: string; at_time?: string }) => {
     const q = new URLSearchParams();
     if (params.min_severity != null) q.set("min_severity", String(params.min_severity));
     if (params.decision_type) q.set("decision_type", params.decision_type);
     if (params.at_time) q.set("at_time", params.at_time);
-    return apiGet<DecisionRiskEventResponse[]>(
-      `/v1/decision/risk-events?${q.toString()}`,
-      { revalidateSeconds },
-    );
+    return apiGet<DecisionRiskEventResponse[]>(`/v1/decision/risk-events?${q.toString()}`);
   },
 
-  listNarratives: (
-    params: { min_saturation?: number; active_only?: boolean },
-    revalidateSeconds?: number,
-  ) => {
+  listNarratives: (params: { min_saturation?: number; active_only?: boolean }) => {
     const q = new URLSearchParams();
     if (params.min_saturation != null) q.set("min_saturation", String(params.min_saturation));
     if (params.active_only != null) q.set("active_only", params.active_only ? "true" : "false");
-    return apiGet<NarrativeResponse[]>(`/v1/decision/narratives?${q.toString()}`, {
-      revalidateSeconds,
-    });
+    return apiGet<NarrativeResponse[]>(`/v1/decision/narratives?${q.toString()}`);
   },
 
-  getNarrative: (id: string, revalidateSeconds?: number) =>
-    apiGet<NarrativeDetailResponse>(`/v1/decision/narratives/${encodeURIComponent(id)}`, {
-      revalidateSeconds,
-    }),
+  getNarrative: (id: string) =>
+    apiGet<NarrativeDetailResponse>(`/v1/decision/narratives/${encodeURIComponent(id)}`),
 
-  listDecisionHistory: (
-    params: { start_time: string; end_time: string },
-    revalidateSeconds?: number,
-  ) => {
+  listDecisionHistory: (params: { start_time: string; end_time: string }) => {
     const q = new URLSearchParams(params);
-    return apiGet<DecisionHistoryItemResponse[]>(`/v1/decision/history?${q.toString()}`, {
-      revalidateSeconds,
-    });
+    return apiGet<DecisionHistoryItemResponse[]>(`/v1/decision/history?${q.toString()}`);
   },
 
-  getDecisionHistoryItem: (contextId: string, revalidateSeconds?: number) =>
-    apiGet<DecisionHistoryItemResponse>(`/v1/decision/history/${encodeURIComponent(contextId)}`, {
-      revalidateSeconds,
-    }),
+  getDecisionHistoryItem: (contextId: string) =>
+    apiGet<DecisionHistoryItemResponse>(`/v1/decision/history/${encodeURIComponent(contextId)}`),
 
-  getNarrativeDetail: (id: string, revalidateSeconds?: number) =>
-    apiGet<NarrativeDetailResponse>(`/v1/decision/narratives/${encodeURIComponent(id)}`, {
-      revalidateSeconds,
-    }),
+  getNarrativeDetail: (id: string) =>
+    apiGet<NarrativeDetailResponse>(`/v1/decision/narratives/${encodeURIComponent(id)}`),
 
-  /**
-   * Fetches the market intelligence reliability assessment for the dashboard.
-   */
-  getInformationReliability: (asset: string, revalidateSeconds?: number) =>
-    apiGet<InformationReliabilityResponse>(`/v1/market/intel?asset=${encodeURIComponent(asset)}`, {
-      revalidateSeconds,
-    }),
+  getInformationReliability: (asset: string) =>
+    apiGet<InformationReliabilityResponse>(`/v1/market/intel?asset=${encodeURIComponent(asset)}`),
 };
-
