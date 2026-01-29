@@ -12,8 +12,8 @@ export default async function ICPreparationModePage() {
   try {
     const [env, risks, narratives] = await Promise.all([
       api.getDecisionEnvironment(),
-      api.listRiskEvents({ min_severity: 3 }, 300),
-      api.listNarratives({ min_saturation: 2, active_only: true }, 600),
+      api.listRiskEvents({ min_severity: 3 }),
+      api.listNarratives({ min_saturation: 2, active_only: true }),
     ]);
 
     return (
