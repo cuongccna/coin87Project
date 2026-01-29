@@ -7,7 +7,9 @@ import { ClientEntry } from '../components/ClientEntry';
 import { api } from '../lib/api';
 import { InformationReliabilityResponse, ReliabilityLevel } from '../lib/marketTypes';
 
-// Type Mapping Helpers
+/* -----------------------------
+   Type Mapping Helpers
+----------------------------- */
 
 function mapReliability(level: ReliabilityLevel): ReliabilityStatus {
   switch (level) {
@@ -26,77 +28,128 @@ function mapState(persistenceHours: number): NarrativeState {
   return 'FADING';
 }
 
+/* -----------------------------
+   Trust Thresholds (Coin87 Logic)
+----------------------------- */
+
+const ACTIVE_THRESHOLD = 0.6;
+const EMERGING_THRESHOLD = 0.3;
+
 export default async function HomePage() {
-  // Fetch Real Data
   let data: InformationReliabilityResponse;
-  
+
   try {
-    data = await api.getInformationReliability("MARKET", 60); // Cache for 60s
+    data = await api.getInformationReliability("MARKET", 60);
   } catch (err) {
     console.error("Failed to fetch market intel:", err);
-    // Returning empty/safe data to allow page load with "Offline" look
     data = {
-        state: {
-            overall_reliability: "unverified",
-            confirmation_rate: 0,
-            contradiction_rate: 0,
-            active_narratives_count: 0
-        },
-        signals: []
+      state: {
+        overall_reliability: "unverified",
+        confirmation_rate: 0,
+        contradiction_rate: 0,
+        active_narratives_count: 0
+      },
+      signals: []
     };
   }
 
+  /* -----------------------------
+     Snapshot Header
+  ----------------------------- */
+
   const snapshot: HomeSnapshot = {
     active_narratives_count: data.state.active_narratives_count,
-    clarity_score: data.state.confirmation_rate, // Using confirmation rate as proxy for clarity
-    last_updated_at: new Date().toISOString() // Ideally backend timestamp
+    clarity_score: Math.round(data.state.confirmation_rate * 100),
+    last_updated_at: new Date().toISOString()
   };
 
+  /* -----------------------------
+     Map Backend → UI Model
+  ----------------------------- */
+
   const allNarratives: NarrativeSummary[] = data.signals.map((signal, index) => ({
-    id: signal.narrative_id ?? `signal-${index}`, // Use real ID if available, else safe fallback
+    id: signal.narrative_id ?? `signal-${index}`,
     topic: signal.title,
     state: mapState(signal.persistence_hours),
     last_updated: new Date().toISOString(),
     first_seen_at: new Date(Date.now() - signal.persistence_hours * 3600 * 1000).toISOString(),
     reliability_score: signal.reliability_score,
     reliability_label: mapReliability(signal.reliability_level),
-    is_ignored: signal.reliability_level === 'unverified', // Treat unverified as suppressed/noise
+    is_ignored: false, // no hard suppression here anymore
     explanation_metadata: {
-        consensus_level: signal.confirmation_count > 5 ? 'high' : signal.confirmation_count > 2 ? 'medium' : 'low',
-        source_diversity: 'limited', // Default
-        is_steady: signal.persistence_hours > 24,
-        has_contradictions: false // Not in basic signal
+      consensus_level:
+        signal.confirmation_count > 5 ? 'high' :
+        signal.confirmation_count > 2 ? 'medium' : 'low',
+      source_diversity: 'limited',
+      is_steady: signal.persistence_hours > 24,
+      has_contradictions: false
     }
   }));
 
-  const activeNarratives = allNarratives.filter(n => !n.is_ignored);
-  const ignoredNarratives = allNarratives.filter(n => n.is_ignored);
+  /* -----------------------------
+     Tiered Information Zones
+  ----------------------------- */
+
+  const activeNarratives = allNarratives.filter(
+    n => n.reliability_score >= ACTIVE_THRESHOLD
+  );
+
+  const emergingNarratives = allNarratives.filter(
+    n => n.reliability_score < ACTIVE_THRESHOLD && n.reliability_score >= EMERGING_THRESHOLD
+  );
+
+  const silenceNarratives = allNarratives.filter(
+    n => n.reliability_score < EMERGING_THRESHOLD
+  );
+
+  /* -----------------------------
+     Render
+  ----------------------------- */
 
   return (
     <ClientEntry>
       <main className="min-h-screen bg-background text-primary pb-safe">
-        {/* Offline Awareness Layer */}
+
         <OfflineIndicator lastUpdated={snapshot.last_updated_at} />
-        
         <HomeHeader snapshot={snapshot} />
-        
+
+        {/* ACTIVE ZONE */}
         <div className="px-4 py-6">
           <h2 className="text-xs font-mono uppercase text-tertiary mb-4 ml-1">
-            Active Narratives
+            Active Narratives (High Trust)
           </h2>
-          
+
           {activeNarratives.length === 0 ? (
-             <div className="text-sm text-tertiary p-4 border border-border/50 rounded-lg border-dashed">
-                No active signals detected.
-             </div>
+            <div className="text-sm text-tertiary p-4 border border-border/50 rounded-lg border-dashed">
+              No high-confidence narratives detected.
+            </div>
           ) : (
             activeNarratives.map(n => (
-                <NarrativeCard key={n.id} narrative={n} />
+              <NarrativeCard key={n.id} narrative={n} />
             ))
           )}
         </div>
 
-        <SilenceArea ignoredNarratives={ignoredNarratives} />
+        {/* EMERGING ZONE */}
+        <div className="px-4 pb-6">
+          <h2 className="text-xs font-mono uppercase text-tertiary mb-4 ml-1">
+            Emerging Narratives (Forming Consensus)
+          </h2>
+
+          {emergingNarratives.length === 0 ? (
+            <div className="text-sm text-tertiary p-4 border border-border/30 rounded-lg border-dashed">
+              No emerging narratives.
+            </div>
+          ) : (
+            emergingNarratives.map(n => (
+              <NarrativeCard key={n.id} narrative={n} />
+            ))
+          )}
+        </div>
+
+        {/* SILENCE ZONE */}
+        <SilenceArea ignoredNarratives={silenceNarratives} />
+
       </main>
     </ClientEntry>
   );
