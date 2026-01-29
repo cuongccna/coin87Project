@@ -65,7 +65,8 @@ export const api = {
     return apiGet<DecisionHistoryItemResponse[]>(`/v1/decision/history?${q.toString()}`);
   },
 
-  getDecisionHistoryItem: (contextId: string) =>
+
+  getDecisionHistoryItem: (contextId: string, _revalidateSeconds?: number) =>
     apiGet<DecisionHistoryItemResponse>(`/v1/decision/history/${encodeURIComponent(contextId)}`),
 
   getNarrativeDetail: (id: string) =>
