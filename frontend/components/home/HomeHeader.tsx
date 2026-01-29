@@ -7,7 +7,7 @@ export function HomeHeader({ snapshot }: { snapshot: HomeSnapshot }) {
         <div>
           <h1 className="text-secondary text-sm font-medium tracking-wide">COIN87</h1>
           <div className="text-xxs text-tertiary font-mono mt-1">
-             UPDATED {new Date(snapshot.last_updated_at).toLocaleTimeString()}
+             UPDATED {new Date(snapshot.last_updated_at).toLocaleString('en-US', { timeZone: 'Asia/Bangkok', hour12: false })} UTC+7
           </div>
         </div>
         <div className="text-right">
