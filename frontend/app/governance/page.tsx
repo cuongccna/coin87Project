@@ -7,7 +7,7 @@ export const revalidate = 600;
 
 export default async function GovernancePage() {
   try {
-    const env = await api.getDecisionEnvironment(600);
+    const env = await api.getDecisionEnvironment();
 
     return (
       <div className="vStack">
