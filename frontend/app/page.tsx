@@ -48,7 +48,7 @@ export default async function HomePage() {
 
   const snapshot: HomeSnapshot = {
     active_narratives_count: data.state.active_narratives_count,
-    clarity_score: data.state.confirmation_rate, // Using confirmation rate as proxy for clarity
+    clarity_score: Math.min(Math.max(data.state.confirmation_rate, 0), 100), // Ensure clarity_score is between 0 and 100
     last_updated_at: new Date().toISOString() // Ideally backend timestamp
   };
 
