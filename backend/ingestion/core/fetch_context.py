@@ -135,7 +135,19 @@ class FetchContext:
         proxy_url = self.proxy_url_for(source)
         proxies = None
         if proxy_url:
-            proxies = {"http://": proxy_url, "https://": proxy_url}
+            # Handle SOCKS5 vs HTTP proxies
+            if proxy_url.startswith("socks5"):
+                # httpx-socks requires mounting specific transport or passing proxies dict differently
+                # But httpx natively supports 'socks5://' in `proxies` dict if httpx-socks is installed.
+                # However, httpx expects schema keys to be protocols like 'http://' and 'https://',
+                # and the value to be the proxy URL.
+                proxies = {
+                    "http://": proxy_url, 
+                    "https://": proxy_url
+                }
+            else:
+                proxies = {"http://": proxy_url, "https://": proxy_url}
+            
             logger.info(f"Connecting to {source.key} via proxy: {proxy_url}")
 
         meta: dict[str, Any] = {"source_key": source.key, "url": source.url, "proxy": bool(proxy_url)}
@@ -153,10 +165,10 @@ class FetchContext:
                     proxies=proxies,
                 ) as client:
                     resp = client.get(source.url, headers=headers)
-            except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as e:
+            except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadError, httpx.RemoteProtocolError) as e:
                 # Fallback to direct connection if proxy fails
                 if proxies:
-                    logger.warning(f"Proxy connection failed ({e}). Falling back to direct connection for {source.key}.")
+                    logger.warning(f"Proxy connection failed ({type(e).__name__}: {e}). Falling back to direct connection for {source.key}.")
                     meta["proxy_failed"] = True
                     meta["proxy_error"] = str(e)
                     # Retry without proxies
@@ -176,6 +188,9 @@ class FetchContext:
             # Handling status codes
             if resp.status_code == 304:
                 outcome = FetchOutcome.SUCCESS
+                logger.info(f"Fetch {source.key}: 304 Not Modified.")
+                # Update state to maintain last_checked timestamp
+                self._store.update_state(source.key, outcome)
                 # Content not modified, return validation but no text (adapters handle None text as empty)
                 return 304, None, meta
 
@@ -191,38 +206,32 @@ class FetchContext:
                     except ValueError:
                         pass # Date format not parsed
 
+                logger.warning(f"Fetch {source.key} BLOCKED: Status {resp.status_code}. Outcome: {outcome.name}. Next retry: {next_run}")
+                
+                # IMPORTANT: Persist state to trigger backoff/cooldown
+                self._store.update_state(source.key, outcome, next_run=next_run)
+
                 return resp.status_code, None, meta
 
             if resp.status_code >= 400:
                 outcome = FetchOutcome.TRANSIENT_ERROR
+                logger.error(f"Fetch {source.key} FAILED: Status {resp.status_code}. URL: {source.url}")
+                self._store.update_state(source.key, outcome)
                 return resp.status_code, None, meta
 
             # SUCCESS 200
-                outcome = FetchOutcome.SUCCESS
-                new_etag = resp.headers.get("ETag")
-                new_last_mod = resp.headers.get("Last-Modified")
-                
-                base_interval = source.rate_limit_seconds
-                jitter = random.uniform(-0.1 * base_interval, 0.1 * base_interval)
-                next_run = datetime.now(timezone.utc) + timedelta(seconds=base_interval + jitter)
+            outcome = FetchOutcome.SUCCESS
+            new_etag = resp.headers.get("ETag")
+            new_last_mod = resp.headers.get("Last-Modified")
+            
+            # Save success state (includes resetting backoff)
+            self._store.update_state(source.key, outcome, etag=new_etag, last_modified=new_last_mod)
 
-                return resp.status_code, resp.text, meta
+            return resp.status_code, resp.text, meta
                 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
+            logger.exception(f"Fetch {source.key} EXCEPTION: {str(e)}")
+            self._store.update_state(source.key, FetchOutcome.TRANSIENT_ERROR)
             meta["error_type"] = type(e).__name__
-            outcome = FetchOutcome.TRANSIENT_ERROR
             return None, None, meta
-        
-        finally:
-            # Persist State
-            try:
-                self._store.update_state(
-                    source_id=source.key,
-                    outcome=outcome,
-                    next_run=next_run,
-                    etag=new_etag,
-                    last_modified=new_last_mod
-                )
-            except Exception as e:
-                pass
 

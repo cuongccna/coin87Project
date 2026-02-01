@@ -171,7 +171,7 @@ sources:
     enabled: true
     type: rss
     name: Bitcoin Dev Mailing List
-    url: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/rss.xml
+    url: https://gnusha.org/pi/bitcoindev/new.atom
     rate_limit_seconds: 10800
     proxy: false
     priority: low
@@ -191,7 +191,7 @@ sources:
     enabled: true
     type: rss
     name: L2BEAT Blog
-    url: https://l2beat.com/blog/rss.xml
+    url: https://l2beat.mirror.xyz/feed.xml
     rate_limit_seconds: 7200
     proxy: false
     priority: low
