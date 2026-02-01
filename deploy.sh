@@ -38,6 +38,32 @@ if [ -f ".env" ]; then
         fi
     done < ".env"
 fi
+
+# Auto-extract DB credentials from DATABASE_URL if present (and DB_PASS not explicitly set)
+if [ -n "$DATABASE_URL" ] && [ -z "$DB_PASS" ]; then
+    # Expected format: postgresql+psycopg2://user:pass@host:port/dbname
+    # Strip protocol
+    temp="${DATABASE_URL#*://}"
+    # Extract user:pass
+    creds="${temp%@*}"
+    # Extract host_part/dbname
+    rest="${temp#*@}"
+    
+    # Extract user and pass
+    extracted_user="${creds%%:*}"
+    extracted_pass="${creds#*:}"
+    
+    # Extract dbname (everything after the last /)
+    extracted_dbname="${rest##*/}"
+
+    # Use extracted values if defaults are not set
+    [ -z "$DB_USER" ] && DB_USER="$extracted_user"
+    [ -z "$DB_PASS" ] && DB_PASS="$extracted_pass"
+    [ -z "$DB_NAME" ] && DB_NAME="$extracted_dbname"
+    
+    echo ">>> Auto-detected DB credentials from DATABASE_URL for user: $DB_USER"
+fi
+
 echo ">>> Starting deployment for Coin87..."
 echo ">>> Target Directory: $APP_DIR"
 echo ">>> User: $USER"
@@ -60,8 +86,8 @@ sudo apt-get install -y python3-venv python3-pip python3-dev build-essential nod
 
 # 1.5 Database Setup (Fix Permissions)
 echo ">>> Ensuring Database & User permissions..."
-DB_NAME="coin87_db"
-DB_USER="coin87_user"
+DB_NAME="${DB_NAME:-coin87_db}"
+DB_USER="${DB_USER:-coin87_user}"
 # DB_PASS is intentionally NOT hardcoded. Prefer value from environment/.env.
 # If not present, prompt the operator securely.
 if [ -z "${DB_PASS:-}" ]; then
