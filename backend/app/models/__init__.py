@@ -22,6 +22,7 @@ from app.models import (  # noqa: F401
 
     narrative_reliability_snapshot,
     re_evaluation_log,
+    source_health,
     source_reliability,
     timing_distortion,
 )

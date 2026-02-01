@@ -18,7 +18,7 @@ export function HomeHeader({ snapshot }: { snapshot: HomeSnapshot }) {
            <div className="text-xxs text-tertiary uppercase tracking-wider">Active Narratives</div>
            {process.env.NEXT_PUBLIC_FEATURE_INVERSION === 'true' && (
              <div className="mt-2">
-               <Link href="/inversion" className="text-xxs text-indigo-600 hover:underline">Inversion Feeds</Link>
+               <Link href="/inversion" className="text-xxs text-tertiary/50 hover:text-indigo-400 decoration-dotted underline transition-colors">Inversion Feeds</Link>
              </div>
            )}
         </div>
@@ -27,12 +27,12 @@ export function HomeHeader({ snapshot }: { snapshot: HomeSnapshot }) {
       <div className="flex items-center gap-2">
         <div className="h-1 flex-1 bg-surface_highlight rounded-full overflow-hidden">
           <div 
-            className="h-full bg-secondary/50 rounded-full transition-all duration-500"
+            className="h-full bg-secondary/50 rounded-full transition-all duration-500 cursor-help"
             style={{ width: `${snapshot.clarity_score}%` }} 
-            title="Indicates how coherent current information is."
+            title={`Clarity = How consistent narratives are across sources.\nLow clarity often precedes volatility or mispricing.`}
           />
         </div>
-        <span className="text-xxs text-secondary font-mono" title="Indicates how coherent current information is.">
+        <span className="text-xxs text-secondary font-mono cursor-help" title={`Clarity = How consistent narratives are across sources.\nLow clarity often precedes volatility or mispricing.`}>
           Clarity: {Math.round(snapshot.clarity_score)}%
         </span>
       </div>

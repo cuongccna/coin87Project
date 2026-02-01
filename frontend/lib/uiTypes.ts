@@ -18,6 +18,7 @@ export interface NarrativeSummary {
   reliability_label: ReliabilityStatus;
   is_ignored?: boolean; // Phase 7 Output: Explicitly suppressed/deprioritized
   explanation_metadata?: NarrativeExplanation;
+  inversion_risk?: string; // e.g. "LOW", "MEDIUM", "HIGH"
 }
 
 export interface ClusterItem {

@@ -124,9 +124,28 @@ if [ -f "alembic.ini" ]; then
     echo "Running Database Migrations..."
     # Ensure env vars are present. If .env exists, export them? 
     # Usually alembic/env.py loads .env using python-dotenv.
+    # Exporting just in case env.py doesn't load it automatically when run from here
+    export $(cat .env | xargs)
     alembic upgrade head
 else
     echo "WARNING: alembic.ini not found, skipping migrations."
+fi
+
+# Ensure sources.yaml is in the right place
+if [ -f "ingestion/config/sources.yaml" ]; then
+    echo "Sources configuration authenticated."
+    # If we need to symlink or copy, do it here. Currently script uses direct path or env var.
+    # Ensuring C87_SOURCES_YAML env var is set in PM2 config is handled in ecosystem.config.js
+else
+    echo "WARNING: sources.yaml not found at backend/ingestion/config/sources.yaml"
+fi
+
+# Ensure Proxy config exists in .env
+if ! grep -q "C87_PROXY_URL" .env; then
+    echo "WARNING: C87_PROXY_URL not found in .env. Appending empty placeholder."
+    echo "" >> .env
+    echo "# Proxy Configuration" >> .env
+    echo "C87_PROXY_URL=" >> .env
 fi
 
 deactivate
@@ -188,7 +207,7 @@ add_cron_if_missing() {
     fi
 }
 
-# Run Ingestion every 5 minutes
+# Run Ingestion every 5 minutes (Smart Rate Control handles actual execution)
 add_cron_if_missing "*/5 * * * *" "$APP_DIR/backend/scripts/run_ingestion.sh"
 
 # Run Derive Task every 10 minutes

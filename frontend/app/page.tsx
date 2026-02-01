@@ -1,4 +1,5 @@
 import { HomeHeader } from '../components/home/HomeHeader';
+import { InversionAlerts } from '../components/home/InversionAlerts';
 import { SilenceArea } from '../components/home/SilenceArea';
 import { NarrativeCard } from '../components/narrative/NarrativeCard';
 import { OfflineIndicator } from '../components/ui/OfflineIndicator';
@@ -123,6 +124,7 @@ export default async function HomePage() {
       first_seen_at: n.first_seen_at,
       reliability_score: n.saturation_level * 2, // 1-5 to 1-10 scale
       reliability_label: n.saturation_level >= 4 ? 'STRONG' : n.saturation_level >= 2 ? 'MODERATE' : 'WEAK',
+      inversion_risk: n.saturation_level >= 4 ? 'LOW' : 'MEDIUM', // Mock: Strong consensus = Low Inversion Risk
       is_ignored: false,
       explanation_metadata: {
           consensus_level: n.saturation_level >= 4 ? 'high' : 'medium',
@@ -161,10 +163,15 @@ export default async function HomePage() {
         <OfflineIndicator lastUpdated={snapshot.last_updated_at} />
         <HomeHeader snapshot={snapshot} />
 
+        {/* INVERSION ALERTS (Top Priority) */}
+        {process.env.NEXT_PUBLIC_FEATURE_INVERSION === 'true' && (
+            <InversionAlerts />
+        )}
+
         {/* ACTIVE ZONE */}
         <div className="px-4 py-6">
           <h2 className="text-xs font-mono uppercase text-tertiary mb-4 ml-1">
-            Active Narratives (High Trust)
+            Consensus Narratives
           </h2>
 
           {activeNarratives.length === 0 ? (

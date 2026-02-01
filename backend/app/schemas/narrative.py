@@ -30,6 +30,18 @@ class NarrativeResponse(BaseModel):
     last_seen_at: datetime
 
 
+class AuditTraceItem(BaseModel):
+    event_id: str
+    title: str
+    source: str
+    url: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 class NarrativeDetailResponse(NarrativeResponse):
     linked_risks: list[NarrativeRiskResponse] = Field(default_factory=list)
+    audit_trace: list[AuditTraceItem] = Field(default_factory=list)
+
 

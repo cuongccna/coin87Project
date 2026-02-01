@@ -1,182 +1,266 @@
 sources:
   # ─────────────────────────────────────────────────────────────
-  # Tier 1: Major Crypto News (RSS - Free)
+  # Tier 1: Major Crypto News (High Authority / Original Reporting)
   # ─────────────────────────────────────────────────────────────
   coindesk_rss:
     enabled: true
     type: rss
     name: CoinDesk
     url: https://www.coindesk.com/arc/outboundfeeds/rss/
-    rate_limit_seconds: 20
-    proxy: false
+    rate_limit_seconds: 1800
+    proxy: true
     priority: high
+    tier: 1
 
-  cointelegraph_rss:
+  cointelegraph_markets_rss:
     enabled: true
     type: rss
-    name: Cointelegraph
-    url: https://cointelegraph.com/rss
-    rate_limit_seconds: 20
-    proxy: false
+    name: Cointelegraph Markets
+    url: https://cointelegraph.com/rss/tag/markets
+    rate_limit_seconds: 1800
+    proxy: true
     priority: high
+    tier: 1
 
   theblock_rss:
     enabled: true
     type: rss
     name: The Block
     url: https://www.theblock.co/rss.xml
-    rate_limit_seconds: 25
-    proxy: false
+    rate_limit_seconds: 1800
+    proxy: true
     priority: high
+    tier: 1
+
+  theblock_research_rss:
+    enabled: true
+    type: rss
+    name: The Block Research
+    url: https://www.theblock.co/rss/research.xml
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
 
   decrypt_rss:
     enabled: true
     type: rss
     name: Decrypt
     url: https://decrypt.co/feed
-    rate_limit_seconds: 20
-    proxy: false
+    rate_limit_seconds: 3600
+    proxy: true
     priority: medium
+    tier: 1
+
+  dlnews_rss:
+    enabled: true
+    type: rss
+    name: DL News
+    url: https://www.dlnews.com/rss/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
 
   bitcoinmagazine_rss:
     enabled: true
     type: rss
     name: Bitcoin Magazine
     url: https://bitcoinmagazine.com/.rss/full/
-    rate_limit_seconds: 25
-    proxy: false
+    rate_limit_seconds: 3600
+    proxy: true
     priority: medium
+    tier: 1
+
 
   # ─────────────────────────────────────────────────────────────
-  # Tier 2: Aggregators & Analytics (Free RSS)
+  # Tier 2: Aggregators & On-chain / Market Intelligence
   # ─────────────────────────────────────────────────────────────
+
   cryptopanic_rss:
     enabled: true
     type: rss
-    name: CryptoPanic
+    name: CryptoPanic (Filtered)
     url: https://cryptopanic.com/feed/
-    rate_limit_seconds: 30
-    proxy: false
+    rate_limit_seconds: 3600
+    proxy: true
     priority: medium
+    tier: 2
+    filters:
+      min_source_rank: 8
+      exclude_categories:
+        - sponsored
+        - promotion
 
-  coingape_rss:
+  glassnode_insights_rss:
     enabled: true
     type: rss
-    name: CoinGape
-    url: https://coingape.com/feed/
-    rate_limit_seconds: 25
-    proxy: false
-    priority: low
+    name: Glassnode Insights
+    url: https://insights.glassnode.com/rss/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+
+  cryptoquant_blog_rss:
+    enabled: true
+    type: rss
+    name: CryptoQuant Blog
+    url: https://cryptoquant.com/blog/rss.xml
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+
+  messari_blog_rss:
+    enabled: true
+    type: rss
+    name: Messari Blog
+    url: https://messari.io/rss
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
 
   newsbtc_rss:
     enabled: true
     type: rss
     name: NewsBTC
     url: https://www.newsbtc.com/feed/
-    rate_limit_seconds: 25
+    rate_limit_seconds: 7200
     proxy: false
     priority: low
+    tier: 2
+
+  coingape_rss:
+    enabled: false
+    type: rss
+    name: CoinGape
+    url: https://coingape.com/feed/
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 2
+
 
   # ─────────────────────────────────────────────────────────────
-  # Tier 3: Technical & Development (GitHub Atom - Free)
+  # Tier 3: Protocol / Technical / Early Signals
   # ─────────────────────────────────────────────────────────────
-  github_releases_bitcoin:
+
+  github_bitcoin_releases:
     enabled: true
     type: github
     name: Bitcoin Core Releases
     url: https://github.com/bitcoin/bitcoin/releases.atom
-    rate_limit_seconds: 120
+    rate_limit_seconds: 7200
     proxy: false
     priority: low
+    tier: 3
 
-  github_releases_ethereum:
+  github_ethereum_releases:
     enabled: true
     type: github
-    name: Ethereum Releases
+    name: Go-Ethereum Releases
     url: https://github.com/ethereum/go-ethereum/releases.atom
-    rate_limit_seconds: 120
+    rate_limit_seconds: 7200
     proxy: false
     priority: low
+    tier: 3
+
+  bitcoin_dev_mailing_list:
+    enabled: true
+    type: rss
+    name: Bitcoin Dev Mailing List
+    url: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/rss.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: low
+    tier: 3
+
+  ethereum_magicians_rss:
+    enabled: true
+    type: rss
+    name: Ethereum Magicians
+    url: https://ethereum-magicians.org/latest.rss
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: low
+    tier: 3
+
+  l2beat_blog_rss:
+    enabled: true
+    type: rss
+    name: L2BEAT Blog
+    url: https://l2beat.com/blog/rss.xml
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 3
+
 
   # ─────────────────────────────────────────────────────────────
-  # Tier 4: Social Sentiment (Reddit - Free API)
+  # Tier 4: Social Sentiment (Reddit)
   # ─────────────────────────────────────────────────────────────
+
   reddit_cryptocurrency:
     enabled: true
     type: reddit
     name: r/CryptoCurrency
     url: reddit://r/cryptocurrency?limit=25&sort=hot
-    rate_limit_seconds: 120
+    rate_limit_seconds: 7200
     proxy: false
     priority: medium
+    tier: 4
 
   reddit_bitcoin:
     enabled: true
     type: reddit
     name: r/Bitcoin
     url: reddit://r/bitcoin?limit=20&sort=hot
-    rate_limit_seconds: 120
+    rate_limit_seconds: 7200
     proxy: false
     priority: medium
+    tier: 4
 
   reddit_ethereum:
     enabled: true
     type: reddit
     name: r/Ethereum
     url: reddit://r/ethereum?limit=20&sort=hot
-    rate_limit_seconds: 120
+    rate_limit_seconds: 7200
     proxy: false
     priority: low
+    tier: 4
 
-  reddit_cryptomarkets:
-    enabled: false
-    type: reddit
-    name: r/CryptoMarkets
-    url: reddit://r/cryptomarkets?limit=15&sort=hot
-    rate_limit_seconds: 120
-    proxy: false
-    priority: low
 
   # ─────────────────────────────────────────────────────────────
-  # Tier 5: Telegram (Skeleton - Future Implementation)
+  # Tier 5: Telegram (Skeleton / Future)
   # ─────────────────────────────────────────────────────────────
+
   telegram_skeleton:
     enabled: false
     type: telegram
-    name: Telegram (skeleton)
+    name: Telegram (Skeleton)
     url: ""
-    rate_limit_seconds: 60
+    rate_limit_seconds: 3600
     proxy: false
     priority: low
+    tier: 5
 
-  # ─────────────────────────────────────────────────────────────
-  # Additional Free Sources (Disabled by Default)
-  # ─────────────────────────────────────────────────────────────
-  cryptoslate_rss:
-    enabled: false
-    type: rss
-    name: CryptoSlate
-    url: https://cryptoslate.com/feed/
-    rate_limit_seconds: 30
-    proxy: false
-    priority: low
 
-  blockonomi_rss:
-    enabled: false
-    type: rss
-    name: Blockonomi
-    url: https://blockonomi.com/feed/
-    rate_limit_seconds: 30
-    proxy: false
-    priority: low
-
-  # ─────────────────────────────────────────────────────────────
-  # Notes:
-  # - All sources use free tiers (no paid APIs)
-  # - rate_limit_seconds set to 15-30 min (900-1800s) for production
-  # - Currently showing lower values for testing; adjust before deploy
-  # - Proxy enabled only for sources that require it
-  # - Priority: high (15-30min), medium (30-60min), low (60-120min)
-  # ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# Notes:
+# - Tier 1: Narrative authority & original reporting
+# - Tier 2: Aggregation + on-chain intelligence
+# - Tier 3: Early protocol / technical signals
+# - Tier 4: Crowd sentiment (noise-filtered)
+# - Tier 5: Reserved for private / semi-private feeds
+#
+# Recommended Trust Weights:
+#   Tier 1 = 1.00
+#   Tier 2 = 0.65
+#   Tier 3 = 0.45
+#   Tier 4 = 0.25
+# ─────────────────────────────────────────────────────────────
 
 

@@ -28,6 +28,14 @@ export type NarrativeResponse = {
   last_seen_at: string;
 };
 
+export type AuditTraceItem = {
+  event_id: string;
+  title: string;
+  source: string;
+  url: string | null;
+  created_at: string; // ISO
+};
+
 export type NarrativeDetailResponse = NarrativeResponse & {
   linked_risks: Array<{
     risk_type: string;
@@ -37,6 +45,7 @@ export type NarrativeDetailResponse = NarrativeResponse & {
     valid_to: string | null;
     occurrence_count: number;
   }>;
+  audit_trace?: Array<AuditTraceItem>;
 };
 
 export type DecisionHistoryItemResponse = {

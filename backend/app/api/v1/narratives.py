@@ -67,6 +67,9 @@ async def get_narrative_detail(
     if data is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Narrative not found.")
 
+    # Fetch Audit Trace
+    audit_trace_data = await repo.get_audit_trace(nid)
+
     return NarrativeDetailResponse(
         narrative_id=data.narrative.id,
         theme=data.narrative.theme,
@@ -85,5 +88,7 @@ async def get_narrative_detail(
             )
             for r in data.active_risks
         ],
+        audit_trace=audit_trace_data,
     )
+
 

@@ -14,11 +14,13 @@ Trust & governance intent:
 import os
 import random
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
 
 import httpx
+from ingestion.core.state import PostgresStateStore, FetchOutcome, SourceState
+from ingestion.core.identity import COMMON_HEADERS_CHROME_WIN, COMMON_HEADERS_FIREFOX_MAC
 
 
 DEFAULT_USER_AGENTS: list[str] = [
@@ -27,43 +29,6 @@ DEFAULT_USER_AGENTS: list[str] = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Safari/537.36",
 ]
-
-
-@dataclass
-class SourceHealth:
-    """Track health metrics per source for adaptive backoff."""
-    consecutive_failures: int = 0
-    last_success_epoch: float | None = None
-    last_failure_epoch: float | None = None
-    backoff_until_epoch: float | None = None
-    total_403_429: int = 0
-    
-    def should_skip(self) -> bool:
-        """Check if source should be skipped due to backoff."""
-        if self.backoff_until_epoch is None:
-            return False
-        return time.time() < self.backoff_until_epoch
-    
-    def calculate_backoff_seconds(self) -> float:
-        """Exponential backoff: 2^failures * base (capped at 1 hour)."""
-        base = 60.0  # 1 minute base
-        backoff = min(base * (2 ** self.consecutive_failures), 3600.0)
-        return backoff
-    
-    def record_success(self) -> None:
-        """Reset failure counters on success."""
-        self.consecutive_failures = 0
-        self.last_success_epoch = time.time()
-        self.backoff_until_epoch = None
-    
-    def record_failure(self, is_rate_limit: bool = False) -> None:
-        """Increment failure counter and set backoff."""
-        self.consecutive_failures += 1
-        self.last_failure_epoch = time.time()
-        if is_rate_limit:
-            self.total_403_429 += 1
-        backoff_seconds = self.calculate_backoff_seconds()
-        self.backoff_until_epoch = time.time() + backoff_seconds
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,52 +60,24 @@ class FetchContext:
         self._jmax = float(jitter_seconds_max)
         self._timeout = float(timeout_seconds)
         self._enable_adaptive_backoff = enable_adaptive_backoff
-        self._last_fetch_epoch_by_source: dict[str, float] = {}
-        self._health_by_source: dict[str, SourceHealth] = {}
-        self._proxy_rotation_index: int = 0
+        self._store = PostgresStateStore()
+        
+        # In-memory memory of what we fetched in THIS process run 
+        # (to prevent double fetch if bug exists, though Store handles across runs)
+        self._session_fetched: set[str] = set()
 
-    def choose_user_agent(self) -> str:
-        return random.choice(self._user_agents)
+    def choose_headers(self) -> dict[str, str]:
+        return random.choice([COMMON_HEADERS_CHROME_WIN, COMMON_HEADERS_FIREFOX_MAC]).copy()
 
     def jitter_sleep(self) -> None:
         delay = random.uniform(self._jmin, self._jmax)
         time.sleep(delay)
 
-    def rate_limit_sleep_if_needed(self, source: SourceConfig) -> None:
-        last = self._last_fetch_epoch_by_source.get(source.key)
-        if last is None:
-            return
-        elapsed = time.time() - last
-        remaining = float(source.rate_limit_seconds) - elapsed
-        if remaining > 0:
-            time.sleep(remaining)
-
-    def mark_fetched(self, source: SourceConfig) -> None:
-        self._last_fetch_epoch_by_source[source.key] = time.time()
-
-    def get_health(self, source: SourceConfig) -> SourceHealth:
-        """Get or create health tracker for source."""
-        if source.key not in self._health_by_source:
-            self._health_by_source[source.key] = SourceHealth()
-        return self._health_by_source[source.key]
-
-    def should_skip_source(self, source: SourceConfig) -> bool:
-        """Check if source should be skipped due to health backoff."""
-        if not self._enable_adaptive_backoff:
-            return False
-        health = self.get_health(source)
-        return health.should_skip()
-
     def proxy_url_for(self, source: SourceConfig) -> Optional[str]:
-        """Get proxy URL for source with sticky rotation strategy.
-        
-        Sticky strategy: use same proxy for a source until it fails,
-        then rotate. This reduces fingerprint changes and mimics human behavior.
-        """
+        """Get proxy URL for source with round-robin rotation."""
         if not source.proxy:
             return None
         
-        # Check for multiple proxies (comma-separated)
         proxy_env = os.environ.get("C87_PROXY_URL", "")
         if not proxy_env:
             return None
@@ -149,13 +86,15 @@ class FetchContext:
         if not proxies:
             return None
         
-        if len(proxies) == 1:
-            return proxies[0]
+        # Round-robin rotation based on call count
+        if not hasattr(self, '_proxy_counter'):
+            self._proxy_counter = {}
         
-        # Sticky: use health-based index for rotation
-        health = self.get_health(source)
-        index = health.total_403_429 % len(proxies)
-        return proxies[index]
+        # We rotate per source to distribute load
+        # Or globally? Let's do globally to just cycle through the list
+        self._proxy_rotation_index = (getattr(self, '_proxy_rotation_index', 0) + 1) % len(proxies)
+        
+        return proxies[self._proxy_rotation_index]
 
     def fetch_text(self, *, source: SourceConfig) -> tuple[int | None, str | None, dict[str, Any]]:
         """Fetch URL content (text) for a source with conservative behavior.
@@ -163,25 +102,33 @@ class FetchContext:
         Returns: (status_code, text, meta)
         - Never raises; caller must treat None as failure.
         - meta is safe for logging (no raw content).
-        - Implements adaptive backoff on 403/429.
+        - Implements adaptive backoff on 403/429 via PostgresStateStore.
         """
-        # Check health-based backoff
-        if self.should_skip_source(source):
-            health = self.get_health(source)
-            return None, None, {
+        # Load persistent state
+        state = self._store.load_state(source.key)
+        
+        # 1. Check Circuit Breaker / Rate Limit
+        if self._enable_adaptive_backoff and not state.can_fetch():
+             return None, None, {
                 "source_key": source.key,
                 "skipped": True,
-                "reason": "backoff",
-                "backoff_until": health.backoff_until_epoch,
+                "reason": "circuit_open_or_cooldown",
+                "next_allowed": state.next_allowed_at.isoformat() if state.next_allowed_at else None,
             }
 
-        self.rate_limit_sleep_if_needed(source)
+        # 2. Check in-process duplicate
+        if source.key in self._session_fetched:
+             return None, None, {"source_key": source.key, "skipped": True, "reason": "already_fetched_in_session"}
+
         self.jitter_sleep()
 
-        headers = {
-            "User-Agent": self.choose_user_agent(),
-            "Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.1",
-        }
+        headers = self.choose_headers()
+        
+        # Conditional Fetch
+        if state.etag:
+            headers["If-None-Match"] = state.etag
+        if state.last_modified:
+            headers["If-Modified-Since"] = state.last_modified
 
         proxy_url = self.proxy_url_for(source)
         proxies = None
@@ -189,35 +136,89 @@ class FetchContext:
             proxies = {"http://": proxy_url, "https://": proxy_url}
 
         meta: dict[str, Any] = {"source_key": source.key, "url": source.url, "proxy": bool(proxy_url)}
-        health = self.get_health(source)
+        
+        outcome = FetchOutcome.TRANSIENT_ERROR
+        new_etag = None
+        new_last_mod = None
+        next_run = None
         
         try:
-            with httpx.Client(
-                timeout=self._timeout,
-                follow_redirects=True,
-                proxies=proxies,
-            ) as client:
-                resp = client.get(source.url, headers=headers)
-                self.mark_fetched(source)
+            try:
+                with httpx.Client(
+                    timeout=self._timeout,
+                    follow_redirects=True,
+                    proxies=proxies,
+                ) as client:
+                    resp = client.get(source.url, headers=headers)
+            except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as e:
+                # Fallback to direct connection if proxy fails
+                if proxies:
+                    meta["proxy_failed"] = True
+                    meta["proxy_error"] = str(e)
+                    # Retry without proxies
+                    with httpx.Client(
+                        timeout=self._timeout,
+                        follow_redirects=True,
+                        proxies=None,
+                    ) as client:
+                        resp = client.get(source.url, headers=headers)
+                else:
+                    raise e
 
-                meta["status_code"] = resp.status_code
+            self._session_fetched.add(source.key)
 
-                # Handle rate limiting with adaptive backoff
+            meta["status_code"] = resp.status_code
+            
+            # Handling status codes
+            if resp.status_code == 304:
+                    outcome = FetchOutcome.SUCCESS
+                    # Content not modified, return validation but no text (adapters handle None text as empty)
+                    return 304, None, meta
+
                 if resp.status_code in (403, 429):
-                    health.record_failure(is_rate_limit=True)
-                    meta["backoff_seconds"] = health.calculate_backoff_seconds()
+                    outcome = FetchOutcome.SOFT_BLOCK if resp.status_code == 429 else FetchOutcome.HARD_BLOCK
+                    
+                    # Try to parse Retry-After header
+                    retry_after = resp.headers.get("Retry-After")
+                    if retry_after:
+                        try:
+                            seconds = int(retry_after)
+                            next_run = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+                        except ValueError:
+                            pass # Date format not parsed
+
                     return resp.status_code, None, meta
 
                 if resp.status_code >= 400:
-                    health.record_failure(is_rate_limit=False)
+                    outcome = FetchOutcome.TRANSIENT_ERROR
                     return resp.status_code, None, meta
 
-                # Success: reset health counters
-                health.record_success()
+                # SUCCESS 200
+                outcome = FetchOutcome.SUCCESS
+                new_etag = resp.headers.get("ETag")
+                new_last_mod = resp.headers.get("Last-Modified")
+                
+                base_interval = source.rate_limit_seconds
+                jitter = random.uniform(-0.1 * base_interval, 0.1 * base_interval)
+                next_run = datetime.now(timezone.utc) + timedelta(seconds=base_interval + jitter)
+
                 return resp.status_code, resp.text, meta
                 
         except Exception as e:  # noqa: BLE001
             meta["error_type"] = type(e).__name__
-            health.record_failure(is_rate_limit=False)
+            outcome = FetchOutcome.TRANSIENT_ERROR
             return None, None, meta
+        
+        finally:
+            # Persist State
+            try:
+                self._store.update_state(
+                    source_id=source.key,
+                    outcome=outcome,
+                    next_run=next_run,
+                    etag=new_etag,
+                    last_modified=new_last_mod
+                )
+            except Exception as e:
+                pass
 

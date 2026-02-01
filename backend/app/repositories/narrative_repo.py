@@ -11,6 +11,8 @@ from sqlalchemy import Select, select
 
 from app.models.narrative_cluster import NarrativeCluster, NarrativeStatus, narrative_memberships
 from app.models.decision_risk_event import DecisionRiskEvent
+from app.models.cluster_assignment import ClusterAssignment, ClusterAssignment
+from app.models.information_event import InformationEvent
 from app.repositories.base import BaseRepository
 
 
@@ -144,6 +146,30 @@ class NarrativeRepository(BaseRepository[NarrativeCluster]):
             narrative=_to_narrative_dto(narrative),
             active_risks=aggregated_risks,
         )
+
+    async def get_audit_trace(self, narrative_id: uuid.UUID, limit: int = 50) -> list[dict]:
+        """Fetch raw information events linked to this narrative."""
+        # Join: ClusterAssignment -> InformationEvent
+        stmt = (
+            select(InformationEvent)
+            .join(ClusterAssignment, ClusterAssignment.information_event_id == InformationEvent.id)
+            .where(ClusterAssignment.cluster_id == narrative_id)
+            .order_by(InformationEvent.created_at.desc())
+            .limit(limit)
+        )
+        
+        events = (await self._execute(stmt)).scalars().all()
+        
+        return [
+            {
+                "event_id": str(e.id),
+                "title": e.title,
+                "source": e.source_id, # Or map source_key to nice name if possible, assuming source_id is key
+                "url": e.url,
+                "created_at": e.created_at
+            }
+            for e in events
+        ]
 
 
 def _to_narrative_dto(m: NarrativeCluster) -> NarrativeDTO:

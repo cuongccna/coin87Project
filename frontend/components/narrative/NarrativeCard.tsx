@@ -2,6 +2,39 @@ import Link from 'next/link';
 import { Card } from '../ui/Primitives';
 import { NarrativeSummary } from '../../lib/uiTypes';
 
+
+function InversionDots({ risk }: { risk?: string }) {
+    // Default to Low/Medium if undefined, or based on mapping
+    const r = (risk || 'LOW').toUpperCase();
+    let count = 1;
+    let color = 'text-green-500';
+    
+    if (r === 'HIGH') {
+        count = 3;
+        color = 'text-red-500';
+    } else if (r === 'MEDIUM') {
+        count = 2;
+        color = 'text-yellow-500';
+    } else {
+        count = 1;
+        color = 'text-green-500'; // actually user said 3 dots filled for high.
+    }
+    
+    // UI Requirement: Inversion Risk: ●●●○○
+    // High = 3 filled, Medium = 2 filled, Low = 1 filled
+    
+    return (
+        <div className="flex items-center gap-1 text-[9px] text-tertiary font-mono ml-4" title={`Potential misinterpretation risk: ${r}`}>
+            <span>Inversion Risk:</span>
+            <div className="flex tracking-tighter">
+                {[1, 2, 3, 4, 5].map(i => (
+                    <span key={i} className={i <= count ? color : 'text-gray-700'}>●</span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export function NarrativeCard({ narrative }: { narrative: NarrativeSummary }) {
   // 1. Reliability Logic: Only STRONG/MODERATE should appear ideally.
   const isStrong = narrative.reliability_label === "STRONG";
@@ -55,6 +88,10 @@ export function NarrativeCard({ narrative }: { narrative: NarrativeSummary }) {
                •
              </span>
              <span className="text-tertiary">{timeContext}</span>
+             
+             {/* Inversion Risk Indicator */}
+             <div className="hidden sm:block border-l border-border/30 mx-2 h-3"></div>
+             <InversionDots risk={narrative.inversion_risk} />
           </div>
           <div className={`flex items-center space-x-1.5 ${isStrong ? 'opacity-100' : 'opacity-80'}`}>
              <div className={`w-1.5 h-1.5 rounded-full ${isStrong ? 'bg-strong' : 'bg-moderate'}`} />

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Badge, Card } from '../../../components/ui/Primitives';
+import { AuditTrace } from '../../../components/narrative/AuditTrace';
 import { api } from '../../../lib/api';
 import { NarrativeDetailResponse } from '../../../lib/types'; // Ensure exported or types reference
 
@@ -94,12 +95,10 @@ export default async function NarrativeDetailPage({ params }: { params: { id: st
           )}
         </div>
         
-        {/* Placeholder for future expansion */}
-        <div className="mb-8 opacity-50">
+        {/* Audit Trace Section */}
+        <div className="mb-8">
              <h3 className="text-xs font-mono uppercase text-tertiary mb-3">Audit Trace</h3>
-             <div className="text-xs text-tertiary border border-dashed border-border p-3 rounded">
-                Audit trail not available in current release.
-             </div>
+             <AuditTrace items={n.audit_trace} />
         </div>
       </div>
     </main>
