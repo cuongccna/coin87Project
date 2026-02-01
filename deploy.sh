@@ -9,7 +9,15 @@ APP_DIR="/opt/coin87Project"
 BACKEND_PORT=9000
 FRONTEND_PORT=9001
 USER=$(whoami)
-
+ 
+# Load .env early if present to pick up DB credentials and other config
+if [ -f ".env" ]; then
+    # Export variables defined in .env into environment for this script
+    set -o allexport
+    # shellcheck disable=SC1090
+    source .env
+    set +o allexport
+fi
 echo ">>> Starting deployment for Coin87..."
 echo ">>> Target Directory: $APP_DIR"
 echo ">>> User: $USER"
@@ -34,8 +42,13 @@ sudo apt-get install -y python3-venv python3-pip python3-dev build-essential nod
 echo ">>> Ensuring Database & User permissions..."
 DB_NAME="coin87_db"
 DB_USER="coin87_user"
-# Password should ideally match what is in .env or hardcoded here for the initial setup
-DB_PASS="Cuongnv123456"
+# DB_PASS is intentionally NOT hardcoded. Prefer value from environment/.env.
+# If not present, prompt the operator securely.
+if [ -z "${DB_PASS:-}" ]; then
+    # Prompt for password without echo
+    read -r -s -p "Enter database password for $DB_USER (will not echo): " DB_PASS
+    echo
+fi
 
 if sudo -u postgres psql -c "SELECT 1;" &> /dev/null; then
     # Create User
@@ -101,10 +114,11 @@ cd backend
 # Create .env if missing (Critical for Alembic)
 if [ ! -f ".env" ]; then
     echo "Creating backend .env..."
-    echo "DATABASE_URL=postgresql+psycopg2://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME" > .env
-    echo "C87_MARKET_INTEL_URL=http://localhost:8000/v1/market/intel" >> .env
-    echo "C87_JWT_SECRET=coin87-prod-secret-change-me" >> .env
-    echo "Environment file created."
+    # Write values from the variables (DB_PASS provided above). Avoid echoing DB_PASS to stdout.
+    printf "%s\n" "DATABASE_URL=postgresql+psycopg2://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME" > .env
+    printf "%s\n" "C87_MARKET_INTEL_URL=http://localhost:8000/v1/market/intel" >> .env
+    printf "%s\n" "C87_JWT_SECRET=coin87-prod-secret-change-me" >> .env
+    echo "Environment file created (sensitive values written)."
 fi
 
 # Create Virtual Environment
