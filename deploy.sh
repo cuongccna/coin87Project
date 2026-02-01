@@ -12,11 +12,31 @@ USER=$(whoami)
  
 # Load .env early if present to pick up DB credentials and other config
 if [ -f ".env" ]; then
-    # Export variables defined in .env into environment for this script
-    set -o allexport
-    # shellcheck disable=SC1090
-    source .env
-    set +o allexport
+    # Safely load variables from .env without executing arbitrary lines.
+    # Handles: comments (#), empty lines, optional "export " prefix, and CRLF.
+    while IFS= read -r line || [ -n "${line}" ]; do
+        # Strip CR if present (handles Windows CRLF)
+        line="${line%%$'\r'}"
+        # Trim leading/trailing whitespace
+        line="$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        # Skip empty lines and comments
+        case "$line" in
+            ""|\#*) continue ;;
+        esac
+        # Remove optional 'export ' prefix
+        if echo "$line" | grep -q '^export[[:space:]]\+'; then
+            line="$(echo "$line" | sed -E 's/^export[[:space:]]+//')"
+        fi
+        # Only process KEY=VALUE lines
+        if echo "$line" | grep -q '='; then
+            key="${line%%=*}"
+            val="${line#*=}"
+            # Trim whitespace around key
+            key="$(echo "$key" | sed -e 's/[[:space:]]*$//' -e 's/^[[:space:]]*//')"
+            # Export the variable (preserve value as-is)
+            export "$key"="$val"
+        fi
+    done < ".env"
 fi
 echo ">>> Starting deployment for Coin87..."
 echo ">>> Target Directory: $APP_DIR"
