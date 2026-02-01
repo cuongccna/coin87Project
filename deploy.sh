@@ -182,10 +182,14 @@ pip install -r requirements.txt
 # Database Migrations
 if [ -f "alembic.ini" ]; then
     echo "Running Database Migrations..."
-    # Ensure env vars are present. If .env exists, export them? 
-    # Usually alembic/env.py loads .env using python-dotenv.
-    # Exporting just in case env.py doesn't load it automatically when run from here
-    export $(cat .env | xargs)
+    # Ensure env vars are present.
+    # Safely load .env if present (handling comments and whitespace)
+    if [ -f ".env" ]; then
+        set -o allexport
+        # shellcheck disable=SC1090
+        source .env
+        set +o allexport
+    fi
     alembic upgrade head
 else
     echo "WARNING: alembic.ini not found, skipping migrations."
