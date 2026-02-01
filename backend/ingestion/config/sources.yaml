@@ -2,6 +2,10 @@ sources:
   # ─────────────────────────────────────────────────────────────
   # Tier 1: Major Crypto News (High Authority / Original Reporting)
   # ─────────────────────────────────────────────────────────────
+  # Fields:
+  #   - fetch_strategy: "scored" (default) | "always" | "never"
+  #   - worth_click_keywords: Optional list để boost score
+  # ─────────────────────────────────────────────────────────────
   coindesk_rss:
     enabled: true
     type: rss
@@ -11,6 +15,11 @@ sources:
     proxy: true
     priority: high
     tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - regulation
+      - SEC
+      - ETF
 
   cointelegraph_markets_rss:
     enabled: true
@@ -33,7 +42,7 @@ sources:
     tier: 1
 
   theblock_research_rss:
-    enabled: true
+    enabled: false
     type: rss
     name: The Block Research
     url: https://www.theblock.co/rss/research.xml
@@ -49,6 +58,7 @@ sources:
     url: https://decrypt.co/feed
     rate_limit_seconds: 3600
     proxy: true
+    detailed_fetch: true
     priority: medium
     tier: 1
 
@@ -69,8 +79,81 @@ sources:
     url: https://bitcoinmagazine.com/.rss/full/
     rate_limit_seconds: 3600
     proxy: true
+    detailed_fetch: true
     priority: medium
     tier: 1
+
+  cryptoslate_rss:
+    enabled: true
+    type: rss
+    name: CryptoSlate
+    url: https://cryptoslate.com/feed/
+    rate_limit_seconds: 1800
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - regulation
+      - SEC
+      - institutional
+      - ETF
+
+  blockworks_rss:
+    enabled: true
+    type: rss
+    name: Blockworks
+    url: https://blockworks.co/feed
+    rate_limit_seconds: 1800
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - institutional
+      - trading
+      - market structure
+
+  unchained_rss:
+    enabled: true
+    type: rss
+    name: Unchained (Laura Shin)
+    url: https://unchainedcrypto.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - investigation
+      - regulation
+      - interview
+
+  protos_rss:
+    enabled: true
+    type: rss
+    name: Protos
+    url: https://protos.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - investigation
+      - fraud
+      - regulation
+
+  bitcoindotcom_rss:
+    enabled: true
+    type: rss
+    name: Bitcoin.com News
+    url: https://news.bitcoin.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 1
+    fetch_strategy: scored
 
 
   # ─────────────────────────────────────────────────────────────
@@ -142,6 +225,73 @@ sources:
     priority: low
     tier: 2
 
+  coingecko_blog_rss:
+    enabled: true
+    type: rss
+    name: CoinGecko Blog
+    url: https://www.coingecko.com/buzz/feed
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+    worth_click_keywords:
+      - market
+      - data
+      - analysis
+
+  santiment_insights_rss:
+    enabled: true
+    type: rss
+    name: Santiment Insights
+    url: https://insights.santiment.net/feed
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+    worth_click_keywords:
+      - on-chain
+      - whale
+      - metric
+
+  dune_blog_rss:
+    enabled: true
+    type: rss
+    name: Dune Analytics Blog
+    url: https://dune.com/blog/rss.xml
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+
+  nansen_research_rss:
+    enabled: true
+    type: rss
+    name: Nansen Research
+    url: https://www.nansen.ai/research/rss
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+    worth_click_keywords:
+      - whale
+      - smart money
+      - on-chain
+
+  intotheblock_blog_rss:
+    enabled: true
+    type: rss
+    name: IntoTheBlock Blog
+    url: https://blog.intotheblock.com/rss/
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+
 
   # ─────────────────────────────────────────────────────────────
   # Tier 3: Protocol / Technical / Early Signals
@@ -197,6 +347,77 @@ sources:
     priority: low
     tier: 3
 
+  flashbots_blog_rss:
+    enabled: true
+    type: rss
+    name: Flashbots Blog
+    url: https://writings.flashbots.net/rss/
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+    worth_click_keywords:
+      - MEV
+      - block building
+      - auction
+
+  a16z_crypto_rss:
+    enabled: true
+    type: rss
+    name: a16z Crypto
+    url: https://a16zcrypto.com/posts/feed/
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+    worth_click_keywords:
+      - research
+      - regulation
+      - infrastructure
+
+  paradigm_research_rss:
+    enabled: true
+    type: rss
+    name: Paradigm Research
+    url: https://www.paradigm.xyz/writing/rss
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+    worth_click_keywords:
+      - research
+      - protocol
+      - MEV
+
+  vitalik_blog_rss:
+    enabled: true
+    type: rss
+    name: Vitalik's Blog
+    url: https://vitalik.eth.limo/feed.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: high
+    tier: 3
+    fetch_strategy: always
+    worth_click_keywords:
+      - ethereum
+      - roadmap
+      - scaling
+
+  bitcoin_optech_rss:
+    enabled: true
+    type: rss
+    name: Bitcoin Optech Newsletter
+    url: https://bitcoinops.org/feed.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+
 
   # ─────────────────────────────────────────────────────────────
   # Tier 4: Social Sentiment (Reddit)
@@ -227,6 +448,57 @@ sources:
     type: reddit
     name: r/Ethereum
     url: reddit://r/ethereum?limit=20&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 4
+
+  reddit_ethfinance:
+    enabled: true
+    type: reddit
+    name: r/EthFinance
+    url: reddit://r/ethfinance?limit=15&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: medium
+    tier: 4
+
+  reddit_cryptotechnology:
+    enabled: true
+    type: reddit
+    name: r/CryptoTechnology
+    url: reddit://r/cryptotechnology?limit=15&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 4
+
+  reddit_wallstreetbetscrypto:
+    enabled: true
+    type: reddit
+    name: r/WallStreetBetsCrypto
+    url: reddit://r/wallstreetbetscrypto?limit=10&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 4
+
+  bitcointalk_announcements_rss:
+    enabled: false
+    type: rss
+    name: Bitcointalk Announcements
+    url: https://bitcointalk.org/index.php?board=159.0;.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: low
+    tier: 4
+    # Note: High noise, disabled by default
+
+  mirror_crypto_digest_rss:
+    enabled: true
+    type: rss
+    name: Mirror.xyz Crypto Digest
+    url: https://mirror.xyz/feed/explore
     rate_limit_seconds: 7200
     proxy: false
     priority: low

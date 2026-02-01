@@ -42,6 +42,7 @@ class SourceConfig:
     rate_limit_seconds: int
     proxy: bool
     priority: str  # low|medium|high
+    tier: int = 3  # Default tier
     name: str | None = None
 
 
@@ -76,27 +77,85 @@ class FetchContext:
         time.sleep(delay)
 
     def proxy_url_for(self, source: SourceConfig) -> Optional[str]:
-        """Get proxy URL for source with round-robin rotation."""
+        """Get proxy URL for source với tier-based selection.
+        
+        Tier 1: Residential proxy bắt buộc (high-value sources)
+        Tier 2: Datacenter proxy preferred
+        Tier 3+: Direct connection (low-risk sources)
+        """
         if not source.proxy:
             return None
         
-        proxy_env = os.environ.get("C87_PROXY_URL", "")
+        proxy_env = os.environ.get("C87_PROXY_URL", "") or ""
+        proxy_env = proxy_env.strip()
+
+        # FIX: defensive cleanup for malformed env values that include the key itself
+        # e.g. someone exported: "C87_PROXY_URL=C87_PROXY_URL=socks5://..."
+        if proxy_env.startswith("C87_PROXY_URL="):
+            proxy_env = proxy_env.split("=", 1)[1].strip()
+
+        # Remove surrounding quotes if present
+        if (proxy_env.startswith('"') and proxy_env.endswith('"')) or (
+            proxy_env.startswith("'") and proxy_env.endswith("'")
+        ):
+            proxy_env = proxy_env[1:-1].strip()
+
         if not proxy_env:
+            # Nếu không có proxy config nhưng source yêu cầu proxy (tier 1)
+            if source.tier == 1:
+                logger.warning(f"Tier 1 source {source.key} requires proxy but C87_PROXY_URL not set")
             return None
         
-        proxies = [p.strip() for p in proxy_env.split(",") if p.strip()]
-        if not proxies:
-            return None
+        # Parse proxy pools (format: "socks5://residential1,socks5://residential2|http://dc1,http://dc2")
+        # Separator: | giữa residential và datacenter pools
+        # Separator: , giữa proxies trong cùng pool
+        parts = proxy_env.split("|")
         
-        # Round-robin rotation based on call count
-        if not hasattr(self, '_proxy_counter'):
-            self._proxy_counter = {}
+        residential_proxies = []
+        datacenter_proxies = []
         
-        # We rotate per source to distribute load
-        # Or globally? Let's do globally to just cycle through the list
-        self._proxy_rotation_index = (getattr(self, '_proxy_rotation_index', 0) + 1) % len(proxies)
+        if len(parts) >= 1:
+            residential_proxies = [p.strip() for p in parts[0].split(",") if p.strip()]
+        if len(parts) >= 2:
+            datacenter_proxies = [p.strip() for p in parts[1].split(",") if p.strip()]
         
-        return proxies[self._proxy_rotation_index]
+        # Tier-based selection
+        if source.tier == 1:
+            # Tier 1: MUST use residential
+            if not residential_proxies:
+                logger.warning(f"Tier 1 source {source.key} needs residential proxy but none configured")
+                # Fallback to any proxy available
+                all_proxies = residential_proxies + datacenter_proxies
+                if not all_proxies:
+                    return None
+                proxies = all_proxies
+            else:
+                proxies = residential_proxies
+        elif source.tier == 2:
+            # Tier 2: Prefer datacenter, fallback to residential
+            if datacenter_proxies:
+                proxies = datacenter_proxies
+            elif residential_proxies:
+                proxies = residential_proxies
+            else:
+                return None
+        else:
+            # Tier 3+: Direct preferred (proxy optional)
+            # Chỉ dùng proxy nếu source.proxy = true explicitly
+            all_proxies = datacenter_proxies + residential_proxies
+            if not all_proxies:
+                return None
+            proxies = all_proxies
+        
+        # Round-robin rotation
+        if not hasattr(self, '_proxy_rotation_index'):
+            self._proxy_rotation_index = 0
+        
+        self._proxy_rotation_index = (self._proxy_rotation_index + 1) % len(proxies)
+        selected = proxies[self._proxy_rotation_index]
+        
+        logger.debug(f"Selected proxy for {source.key} (tier {source.tier}): {selected}")
+        return selected
 
     def fetch_text(self, *, source: SourceConfig) -> tuple[int | None, str | None, dict[str, Any]]:
         """Fetch URL content (text) for a source with conservative behavior.
@@ -171,13 +230,23 @@ class FetchContext:
                     logger.warning(f"Proxy connection failed ({type(e).__name__}: {e}). Falling back to direct connection for {source.key}.")
                     meta["proxy_failed"] = True
                     meta["proxy_error"] = str(e)
-                    # Retry without proxies
-                    with httpx.Client(
-                        timeout=self._timeout,
-                        follow_redirects=True,
-                        proxies=None,
-                    ) as client:
-                        resp = client.get(source.url, headers=headers)
+                    # Retry without proxies, but handle any failure gracefully
+                    try:
+                        with httpx.Client(
+                            timeout=self._timeout,
+                            follow_redirects=True,
+                            proxies=None,
+                        ) as client:
+                            resp = client.get(source.url, headers=headers)
+                    except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadError, httpx.RemoteProtocolError) as e2:
+                        logger.warning(f"Direct retry after proxy failure also failed ({type(e2).__name__}: {e2}) for {source.key}.")
+                        meta["fallback_error"] = str(e2)
+                        # Persist transient error state to trigger adaptive backoff
+                        try:
+                            self._store.update_state(source.key, FetchOutcome.TRANSIENT_ERROR)
+                        except Exception:
+                            logger.debug("Failed updating state after fallback error", exc_info=True)
+                        return None, None, meta
                 else:
                     raise e
 

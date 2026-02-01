@@ -33,6 +33,7 @@ from app.models.information_event import InformationEvent
 from ingestion.core.adapter import BaseAdapter, NormalizedEvent, RawItem
 from ingestion.core.dedup import compute_content_hash_sha256_bytes, compute_content_hash_sha256_hex
 from ingestion.core.fetch_context import FetchContext, SourceConfig
+from ingestion.core.content_fetcher import fetch_and_extract
 
 
 UTC = timezone.utc
@@ -144,6 +145,21 @@ class RedditAdapter(BaseAdapter):
                             "subreddit": subreddit_name,
                             "is_self": d.get("is_self"),
                         }
+                        # detailed fetch if enabled
+                        try:
+                            link_val = payload.get("permalink") or payload.get("url")
+                            if link_val and getattr(source, "detailed_fetch", False):
+                                html, text, meta = fetch_and_extract(str(link_val), context, source.key)
+                                if html is not None:
+                                    payload["content_html"] = html
+                                if text is not None:
+                                    payload["content_text"] = text
+                                if meta and meta.get("excerpt"):
+                                    payload["content_excerpt"] = meta.get("excerpt")
+                                payload["content_fetch_meta"] = meta
+                        except Exception:
+                            pass
+
                         items.append(RawItem(source_key=source.key, payload=payload))
 
                     return items
@@ -199,6 +215,21 @@ class RedditAdapter(BaseAdapter):
                     "subreddit": subreddit_name,
                     "is_self": post.is_self,
                 }
+                # detailed fetch if enabled
+                try:
+                    link_val = payload.get("permalink") or payload.get("url")
+                    if link_val and getattr(source, "detailed_fetch", False):
+                        html, text, meta = fetch_and_extract(str(link_val), context, source.key)
+                        if html is not None:
+                            payload["content_html"] = html
+                        if text is not None:
+                            payload["content_text"] = text
+                        if meta and meta.get("excerpt"):
+                            payload["content_excerpt"] = meta.get("excerpt")
+                        payload["content_fetch_meta"] = meta
+                except Exception:
+                    pass
+
                 items.append(RawItem(source_key=source.key, payload=payload))
             
             return items
@@ -306,6 +337,11 @@ class RedditAdapter(BaseAdapter):
                 canonical_url=canonical_url,
                 title=title,
                 body_excerpt=event.abstract,
+                content_html=(event.raw_metadata.get("content_html") if isinstance(event.raw_metadata, dict) else None) or None,
+                content_text=(event.raw_metadata.get("content_text") if isinstance(event.raw_metadata, dict) else None) or None,
+                content_excerpt=(event.raw_metadata.get("content_excerpt") if isinstance(event.raw_metadata, dict) else None) or None,
+                fetched_content_at=(event.raw_metadata.get("content_fetch_meta", {}).get("fetched_at") if isinstance(event.raw_metadata, dict) else None),
+                content_fetch_status=(event.raw_metadata.get("content_fetch_meta", {}).get("status") if isinstance(event.raw_metadata, dict) else None),
                 raw_payload=event.raw_metadata,
                 content_hash_sha256=digest_bytes,
                 event_time=event.event_time,

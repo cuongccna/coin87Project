@@ -60,6 +60,12 @@ class InformationEvent(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     # Minimal content fields (never full scraped article text)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     body_excerpt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Optional full content fields populated by detailed fetch
+    content_html: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    content_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    content_excerpt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    fetched_content_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    content_fetch_status: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Raw payload from ingestion (RSS item, platform JSON, etc.)
     raw_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
