@@ -19,21 +19,24 @@ function requestOrigin(): string | null {
   }
 }
 
-function resolveUrl(asset: string) {
+function buildMarketIntelUrl(asset: string) {
   // Prefer explicit backend URL.
-  const url = MARKET_INTEL_URL ?? (API_BASE_URL ? `${API_BASE_URL.replace(/\/$/, "")}/v1/market/intel` : null);
-  if (url) {
-    const u = new URL(url);
+  const base = MARKET_INTEL_URL ?? (API_BASE_URL ? `${API_BASE_URL.replace(/\/$/, "")}/v1/market/intel` : null);
+  if (base) {
+    const u = new URL(base);
     u.searchParams.set("asset", asset);
+    
     return u.toString();
   }
 
   // Local dev fallback: Next.js route handler (still backend-driven JSON; no frontend scoring).
-  return `/api/market/intel?asset=${encodeURIComponent(asset)}`;
+  const path = `/api/market/intel?asset=${encodeURIComponent(asset)}`;
+  return path;
+  return path;
 }
 
 export async function fetchMarketIntel(asset: string, revalidateSeconds = 60): Promise<MarketIntelResponse> {
-  const u = resolveUrl(asset);
+  const u = buildMarketIntelUrl(asset);
   const url = u.startsWith("/") ? `${requestOrigin() ?? "http://localhost:3000"}${u}` : u;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

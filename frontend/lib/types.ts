@@ -35,6 +35,7 @@ export type NarrativeDetailResponse = NarrativeResponse & {
     recommended_posture: "IGNORE" | "REVIEW" | "DELAY";
     valid_from: string;
     valid_to: string | null;
+    occurrence_count: number;
   }>;
 };
 

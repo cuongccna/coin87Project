@@ -6,6 +6,7 @@ import { HomeSnapshot, NarrativeSummary, ReliabilityStatus, NarrativeState } fro
 import { ClientEntry } from '../components/ClientEntry';
 import { api } from '../lib/api';
 import { InformationReliabilityResponse, ReliabilityLevel } from '../lib/marketTypes';
+import { NarrativeResponse } from '../lib/types';
 
 /* -----------------------------
    Type Mapping Helpers
@@ -28,6 +29,15 @@ function mapState(persistenceHours: number): NarrativeState {
   return 'FADING';
 }
 
+function mapBackendStatusToUI(status: string): NarrativeState {
+    switch (status) {
+        case 'ACTIVE': return 'ACTIVE';
+        case 'FADING': return 'FADING';
+        case 'DORMANT': return 'DORMANT';
+        default: return 'ACTIVE';
+    }
+}
+
 /* -----------------------------
    Trust Thresholds (Coin87 Logic)
 ----------------------------- */
@@ -37,9 +47,26 @@ const EMERGING_THRESHOLD = 0.3;
 
 export default async function HomePage() {
   let data: InformationReliabilityResponse;
+  let activeNarrativesList: NarrativeResponse[] = [];
 
   try {
-    data = await api.getInformationReliability("MARKET");
+    const [intelRes, narrativesRes] = await Promise.allSettled([
+      api.getInformationReliability("MARKET"),
+      api.listNarratives({ active_only: true })
+    ]);
+
+    if (intelRes.status === 'fulfilled') {
+      data = intelRes.value;
+    } else {
+      throw intelRes.reason;
+    }
+
+    if (narrativesRes.status === 'fulfilled') {
+        activeNarrativesList = narrativesRes.value;
+    } else {
+        console.warn("Failed to fetch active narratives list", narrativesRes.reason);
+    }
+
   } catch (err) {
     console.error("Failed to fetch market intel:", err);
     data = {
@@ -67,7 +94,8 @@ export default async function HomePage() {
      Map Backend → UI Model
   ----------------------------- */
 
-  const allNarratives: NarrativeSummary[] = data.signals.map((signal, index) => ({
+  // Signals for emerging/raw intelligence
+  const signalNarratives: NarrativeSummary[] = data.signals.map((signal, index) => ({
     id: signal.narrative_id ?? `signal-${index}`,
     topic: signal.title,
     state: mapState(signal.persistence_hours),
@@ -86,20 +114,40 @@ export default async function HomePage() {
     }
   }));
 
+  // True Active Narratives from narrative service
+  const activeNarratives: NarrativeSummary[] = activeNarrativesList.map(n => ({
+      id: n.narrative_id,
+      topic: n.theme,
+      state: mapBackendStatusToUI(n.status),
+      last_updated: n.last_seen_at,
+      first_seen_at: n.first_seen_at,
+      reliability_score: n.saturation_level * 2, // 1-5 to 1-10 scale
+      reliability_label: n.saturation_level >= 4 ? 'STRONG' : n.saturation_level >= 2 ? 'MODERATE' : 'WEAK',
+      is_ignored: false,
+      explanation_metadata: {
+          consensus_level: n.saturation_level >= 4 ? 'high' : 'medium',
+          source_diversity: 'limited', // Default
+          is_steady: true,
+          has_contradictions: false
+      }
+  }));
+
+  const allNarratives = [...activeNarratives, ...signalNarratives];
+
   /* -----------------------------
      Tiered Information Zones
   ----------------------------- */
 
-  const activeNarratives = allNarratives.filter(
-    n => n.reliability_score >= ACTIVE_THRESHOLD
-  );
-
-  const emergingNarratives = allNarratives.filter(
-    n => n.reliability_score < ACTIVE_THRESHOLD && n.reliability_score >= EMERGING_THRESHOLD
+  // Use activeNarratives fetched directly from listNarratives
+  // Use signals for Emeging only
+  
+  const emergingNarratives = signalNarratives.filter(
+    n => n.reliability_score < ACTIVE_THRESHOLD * 10 && n.reliability_score >= EMERGING_THRESHOLD * 10
+    // Note: signals reliability_score 0-10, thresholds are 0.6 (6.0)
   );
 
   const silenceNarratives = allNarratives.filter(
-    n => n.reliability_score < EMERGING_THRESHOLD
+    n => n.reliability_score < EMERGING_THRESHOLD * 10
   );
 
   /* -----------------------------

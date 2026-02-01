@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-01-31T00:00:00Z",
+  "ingestion_jobs": [
+    {
+      "name": "Run Ingestion (Job A)",
+      "entrypoint": "backend/ingestion/jobs/run_ingestion.py",
+      "shell_wrapper": "backend/scripts/run_ingestion.sh",
+      "cron_example": "*/5 * * * * /opt/coin87Project/backend/scripts/run_ingestion.sh",
+      "notes": "Iterates enabled sources from backend/ingestion/config/sources.yaml and runs adapters (rss, reddit)."
+    },
+    {
+      "name": "Derive Risk (Job B)",
+      "entrypoint": "backend/derive/job/run_derive_risk.py",
+      "shell_wrapper": "backend/scripts/run_derive_risk.sh",
+      "cron_example": "*/10 * * * * /opt/coin87Project/backend/scripts/run_derive_risk.sh",
+      "notes": "Runs clustering, mapping and risk derivation phases."
+    },
+    {
+      "name": "Snapshot Environment",
+      "entrypoint": "backend/snapshot/job/run_snapshot_env.py",
+      "shell_wrapper": "backend/scripts/run_snapshot_env.sh",
+      "cron_example": "0 * * * * /opt/coin87Project/backend/scripts/run_snapshot_env.sh",
+      "notes": "Generates environment snapshots used by UI; typically hourly."
+    }
+  ],
+  "adapters": {
+    "rss": "backend/ingestion/adapters/rss_adapter.py (implemented)",
+    "reddit": "backend/ingestion/adapters/reddit_adapter.py (implemented)",
+    "telegram": "backend/ingestion/adapters/telegram_adapter.py (skeleton - not implemented)"
+  },
+  "sources_config": "backend/ingestion/config/sources.yaml",
+  "sources_summary": {
+    "enabled_count": 11,
+    "enabled_examples": [
+      "coindesk_rss",
+      "cointelegraph_rss",
+      "theblock_rss",
+      "decrypt_rss",
+      "bitcoinmagazine_rss",
+      "cryptopanic_rss",
+      "coingape_rss",
+      "newsbtc_rss",
+      "github_releases_bitcoin",
+      "github_releases_ethereum",
+      "reddit_cryptocurrency"
+    ],
+    "disabled_examples": [
+      "reddit_cryptomarkets",
+      "telegram_skeleton",
+      "cryptoslate_rss",
+      "blockonomi_rss"
+    ]
+  },
+  "how_to_run_manually": {
+    "run_all_enabled_sources": "python backend/ingestion/jobs/run_ingestion.py",
+    "run_single_source_example": "# Python snippet:\nfrom ingestion.core.source_registry import load_sources_yaml\nfrom ingestion.adapters.rss_adapter import RssAdapter\nreg = load_sources_yaml('backend/ingestion/config/sources.yaml')\nsrc = reg.get('coindesk_rss')\nadp = RssAdapter()\nctx = FetchContext()\nitems = adp.fetch(ctx, src)\n# then normalize/insert or inspect items",
+    "run_via_shell_wrapper": "backend/scripts/run_ingestion.sh"
+  },
+  "notes": "RSS and Reddit adapters are implemented and ready. Telegram adapter is a skeleton. The ingestion job is intended to be run by cron every 5 minutes (deployment script includes example cron entries). You can run the ingestion job manually via the Python entrypoint or shell wrapper."
+}

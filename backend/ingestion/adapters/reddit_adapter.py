@@ -88,7 +88,67 @@ class RedditAdapter(BaseAdapter):
         try:
             reddit = self._create_reddit_client()
             if reddit is None:
-                return []
+                # Fallback: use Reddit public JSON endpoints when PRAW credentials missing.
+                try:
+                    # Parse query parameters (limit, sort) from source.url
+                    url_parts = source.url.replace("reddit://r/", "").split("?")
+                    subreddit_name = url_parts[0] if url_parts else "cryptocurrency"
+                    limit = 25
+                    sort = "hot"
+                    if len(url_parts) > 1:
+                        params = dict(p.split("=") for p in url_parts[1].split("&") if "=" in p)
+                        limit = int(params.get("limit", 25))
+                        sort = params.get("sort", "hot")
+
+                    json_sort = "hot" if sort == "hot" else ("new" if sort == "new" else "top")
+                    json_url = f"https://reddit.com/r/{subreddit_name}/{json_sort}.json?limit={limit}"
+
+                    temp_source = SourceConfig(
+                        key=f"{source.key}_json_fallback",
+                        enabled=True,
+                        type=source.type,
+                        url=json_url,
+                        rate_limit_seconds=source.rate_limit_seconds,
+                        proxy=source.proxy,
+                        priority=source.priority,
+                        name=source.name,
+                    )
+
+                    status_code, text, meta = context.fetch_text(source=temp_source)
+                    if status_code != 200 or not text:
+                        return []
+
+                    import json as _json
+
+                    js = _json.loads(text)
+                    posts = js.get("data", {}).get("children", [])
+
+                    context.mark_fetched(source)
+
+                    items: list[RawItem] = []
+                    for post in posts:
+                        d = post.get("data", {})
+                        if d.get("stickied"):
+                            continue
+
+                        payload = {
+                            "id": d.get("id"),
+                            "title": d.get("title"),
+                            "selftext": d.get("selftext"),
+                            "url": d.get("url"),
+                            "permalink": f"https://reddit.com{d.get('permalink')}",
+                            "author": d.get("author") or "[deleted]",
+                            "score": d.get("score"),
+                            "num_comments": d.get("num_comments"),
+                            "created_utc": d.get("created_utc"),
+                            "subreddit": subreddit_name,
+                            "is_self": d.get("is_self"),
+                        }
+                        items.append(RawItem(source_key=source.key, payload=payload))
+
+                    return items
+                except Exception:  # noqa: BLE001
+                    return []
 
             # Parse source URL
             url_parts = source.url.replace("reddit://r/", "").split("?")

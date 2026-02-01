@@ -55,12 +55,41 @@ def _category_mapping(repo_cat: str) -> InformationCategory:
 
 
 @router.get("/intel", response_model=InformationReliabilityResponse)
-async def get_market_intel(asset: Asset = "MARKET", db: Session = Depends(get_db_session)) -> InformationReliabilityResponse:
+async def get_market_intel(asset: Asset = "MARKET", mock: bool = False, db: Session = Depends(get_db_session)) -> InformationReliabilityResponse:
     """Get information reliability dashboard summary.
     
     Provides a high-level view of information trust state (NOT price state).
     """
     now = datetime.now(tz=UTC)
+    # Quick mock mode for UI preview/testing: return crafted low-confidence signals
+    if mock:
+        signals = []
+        for i, title in enumerate([
+            "Mock: Layer-2 rollout discussion gains traction",
+            "Mock: Exchange X rumored custody tie-up",
+            "Mock: Social chatter about token Y airdrop",
+            "Mock: Dev thread on minor consensus upgrade",
+        ]):
+            signals.append(
+                InformationSignal(
+                    title=title,
+                    reliability_score=5.0,  # low confidence → EMERGING
+                    reliability_level=_score_to_level(50),
+                    confirmation_count=1 + i,
+                    persistence_hours=2 + i,
+                    category="narrative",
+                    narrative_id=None,
+                )
+            )
+        return InformationReliabilityResponse(
+            state=InformationReliabilityState(
+                overall_reliability="unverified",
+                confirmation_rate=20,
+                contradiction_rate=80,
+                active_narratives_count=0,
+            ),
+            signals=signals,
+        )
     repo = MarketIntelRepository(db)
     narrative_repo = NarrativeRepository(db)
 

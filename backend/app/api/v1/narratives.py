@@ -81,6 +81,7 @@ async def get_narrative_detail(
                 recommended_posture=r.recommended_posture,  # type: ignore[arg-type]
                 valid_from=r.valid_from,
                 valid_to=r.valid_to,
+                occurrence_count=r.occurrence_count,
             )
             for r in data.active_risks
         ],

@@ -27,7 +27,7 @@ export function EnvironmentSnapshotCard({ env }: { env: DecisionEnvironmentRespo
           </div>
         </div>
 
-        <div className="flex items-center justify-center sm:justify-end" aria-label="Environment state">
+        <div className="flex items-center justify-center sm:justify-end" aria-label="Environment state" title="Indicates the current state of the decision environment.">
           <EnvironmentStateBadge state={env.environment_state} size="xl" />
         </div>
       </div>

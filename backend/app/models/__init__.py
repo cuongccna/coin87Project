@@ -16,6 +16,7 @@ from app.models import (  # noqa: F401
     decision_impact_record,
     decision_risk_event,
     information_event,
+    inversion_feed,
     narrative,
     narrative_cluster,
 

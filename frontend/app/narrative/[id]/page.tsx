@@ -8,6 +8,8 @@ const formatDate = (date: string | Date) => new Date(date).toLocaleDateString(un
   year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
 });
 
+import { TEMPORAL_LABELS, determineTemporalDescriptor } from '../../../lib/timeDescriptor';
+
 export default async function NarrativeDetailPage({ params }: { params: { id: string } }) {
   let n: NarrativeDetailResponse;
   
@@ -21,6 +23,12 @@ export default async function NarrativeDetailPage({ params }: { params: { id: st
         </main>
     )
   }
+
+  // Precompute temporal descriptors for each risk to allow contextual rendering
+  // (we may visually de-emphasize repeated descriptors to reduce perceived redundancy)
+  const _temporalDescriptors = n.linked_risks.map((r) =>
+    determineTemporalDescriptor(r.occurrence_count, r.valid_from, r.valid_to)
+  );
 
   return (
     <main className="min-h-screen bg-background text-primary pb-safe">
@@ -56,17 +64,29 @@ export default async function NarrativeDetailPage({ params }: { params: { id: st
             <div className="space-y-3">
                 {n.linked_risks.map((risk, idx) => (
                 <Card key={idx} className="bg-surface/50">
-                    <div className="flex justify-between items-start mb-2">
-                    <div className="text-sm text-primary font-bold">{risk.risk_type}</div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Badge variant={risk.severity >= 4 ? "strong" : "neutral"}>
-                        SEVERITY {risk.severity}
-                        </Badge>
-                        <span className="text-xs text-tertiary">Posture: {risk.recommended_posture}</span>
-                    </div>
-                    <div className="mt-2 text-xs text-secondary">
-                        Valid: {formatDate(risk.valid_from)}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                             <span className="text-sm text-primary font-bold">{risk.risk_type.replace(/_/g, ' ')}</span>
+                             <span className="text-tertiary">·</span>
+                            <Badge variant={risk.severity >= 4 ? "strong" : "neutral"}>
+                            SEVERITY {risk.severity}
+                            </Badge>
+                            <span className="text-tertiary">·</span>
+                            <span className="text-xs text-tertiary uppercase">{risk.recommended_posture}</span>
+                        </div>
+                        <div className="text-xs text-secondary">
+                          {/* Manifesto: Show behavioral time, not raw timestamps by default */}
+                          {(() => {
+                            const descriptor = _temporalDescriptors[idx];
+                            const label = TEMPORAL_LABELS[descriptor];
+                            const repeated = idx > 0 && _temporalDescriptors[idx - 1] === descriptor;
+                            return (
+                              <span>
+                                Observed {risk.occurrence_count} {risk.occurrence_count === 1 ? 'time' : 'times'} · <span className={repeated ? 'opacity-60' : ''}>{label}</span>
+                              </span>
+                            );
+                          })()}
+                        </div>
                     </div>
                 </Card>
                 ))}

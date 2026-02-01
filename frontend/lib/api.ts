@@ -72,6 +72,28 @@ export const api = {
   getNarrativeDetail: (id: string) =>
     apiGet<NarrativeDetailResponse>(`/v1/decision/narratives/${encodeURIComponent(id)}`),
 
-  getInformationReliability: (asset: string) =>
-    apiGet<InformationReliabilityResponse>(`/v1/market/intel?asset=${encodeURIComponent(asset)}`),
+  getInformationReliability: async (asset: string): Promise<InformationReliabilityResponse> => {
+    const fallback: InformationReliabilityResponse = {
+      state: {
+        overall_reliability: "unverified",
+        confirmation_rate: 0,
+        contradiction_rate: 0,
+        active_narratives_count: 0,
+      },
+      signals: [],
+    };
+
+    try {
+      return await apiGet<InformationReliabilityResponse>(
+        `/v1/market/intel?asset=${encodeURIComponent(asset)}`
+      );
+    } catch (err) {
+      // During static generation the backend may be unavailable.
+      // Fall back to a safe, unverified static state to allow build.
+      // Keep the error visible in build logs for debugging.
+      // eslint-disable-next-line no-console
+      console.warn("Failed to fetch market intel, using fallback:", err);
+      return fallback;
+    }
+  },
 };

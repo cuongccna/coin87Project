@@ -98,6 +98,15 @@ fi
 echo ">>> Setting up Backend..."
 cd backend
 
+# Create .env if missing (Critical for Alembic)
+if [ ! -f ".env" ]; then
+    echo "Creating backend .env..."
+    echo "DATABASE_URL=postgresql+psycopg2://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME" > .env
+    echo "C87_MARKET_INTEL_URL=http://localhost:8000/v1/market/intel" >> .env
+    echo "C87_JWT_SECRET=coin87-prod-secret-change-me" >> .env
+    echo "Environment file created."
+fi
+
 # Create Virtual Environment
 if [ ! -d "venv" ]; then
     echo "Creating python virtual environment..."
@@ -184,6 +193,9 @@ add_cron_if_missing "*/5 * * * *" "$APP_DIR/backend/scripts/run_ingestion.sh"
 
 # Run Derive Task every 10 minutes
 add_cron_if_missing "*/10 * * * *" "$APP_DIR/backend/scripts/run_derive_risk.sh"
+
+# Run Feed Promotion every 5 minutes (New Inversion Feed Flow)
+add_cron_if_missing "*/3 * * * *" "$APP_DIR/backend/scripts/run_promote_feed.sh"
 
 # Run Snapshot every hour
 add_cron_if_missing "0 * * * *" "$APP_DIR/backend/scripts/run_snapshot_env.sh"

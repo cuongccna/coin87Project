@@ -44,6 +44,7 @@ class NarrativeRiskDTO:
     detected_at: datetime
     valid_from: datetime
     valid_to: Optional[datetime]
+    occurrence_count: int = 1
 
 
 class NarrativeRepository(BaseRepository[NarrativeCluster]):
@@ -97,9 +98,51 @@ class NarrativeRepository(BaseRepository[NarrativeCluster]):
             .order_by(DecisionRiskEvent.severity.desc(), DecisionRiskEvent.detected_at.desc())
         )
         risks = (await self._execute(stmt_r)).scalars().all()
+
+        # Aggregate risks by (risk_type, severity, recommended_posture)
+        grouped = {}
+        for r in risks:
+            key = (r.risk_type, r.severity, r.recommended_posture)
+            if key not in grouped:
+                grouped[key] = {
+                    "sample": r,
+                    "count": 0,
+                    "min_valid_from": r.valid_from,
+                    "max_valid_to": r.valid_to,
+                    "active_forever": r.valid_to is None
+                }
+            
+            g = grouped[key]
+            g["count"] += 1
+            if r.valid_from < g["min_valid_from"]:
+                g["min_valid_from"] = r.valid_from
+            
+            if r.valid_to is None:
+                g["active_forever"] = True
+                g["max_valid_to"] = None
+            elif not g["active_forever"]:
+                # If current max is None, it shouldn't happen if active_forever is False (initialized with value)
+                if g["max_valid_to"] is None or r.valid_to > g["max_valid_to"]:
+                    g["max_valid_to"] = r.valid_to
+
+        aggregated_risks = []
+        for g in grouped.values():
+            r = g["sample"]
+            aggregated_risks.append(NarrativeRiskDTO(
+                id=str(r.id),
+                risk_type=r.risk_type.value,
+                severity=int(r.severity),
+                affected_decisions=list(r.affected_decisions),
+                recommended_posture=r.recommended_posture.value,
+                detected_at=r.detected_at,
+                valid_from=g["min_valid_from"],
+                valid_to=g["max_valid_to"],
+                occurrence_count=g["count"]
+            ))
+
         return NarrativeWithRisksDTO(
             narrative=_to_narrative_dto(narrative),
-            active_risks=[_to_narrative_risk_dto(r) for r in risks],
+            active_risks=aggregated_risks,
         )
 
 

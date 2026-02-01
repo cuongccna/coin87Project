@@ -18,6 +18,7 @@ class NarrativeRiskResponse(BaseModel):
     recommended_posture: RecommendedPosture
     valid_from: datetime
     valid_to: Optional[datetime] = None
+    occurrence_count: int = 1
 
 
 class NarrativeResponse(BaseModel):

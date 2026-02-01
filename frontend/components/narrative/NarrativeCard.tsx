@@ -32,35 +32,40 @@ export function NarrativeCard({ narrative }: { narrative: NarrativeSummary }) {
     timeContext = `Active for ${diffHrs}h`;
   }
 
+  const isPrimary = narrative.id === 'primary'; // Example logic to identify primary narrative
+
+  const cardClass = isPrimary
+    ? "flex flex-col gap-3 p-4 bg-surface border border-border/50 shadow-soft text-primary font-bold"
+    : "flex flex-col gap-3 p-4 bg-surface border border-border/50 shadow-soft opacity-80";
+
+  const primaryLabel = isPrimary ? (
+    <span className="text-xs text-secondary font-mono">Primary narrative</span>
+  ) : null;
+
   return (
     <Link href={`/narrative/${narrative.id}`} className="block mb-3 active:scale-[0.99] transition-transform duration-100 touch-manipulation">
-      <Card className="flex flex-col gap-3 p-4 bg-surface border border-border/50 shadow-soft">
-        
-        {/* Header: Lifecycle & Reliability */}
+      <Card className={cardClass}>
+        {primaryLabel}
         <div className="flex justify-between items-center text-xxs font-mono tracking-wider">
           <div className="flex items-center gap-2">
             <span className={`uppercase font-semibold ${stateColors[narrative.state] || 'text-secondary'}`}>
               {stateLabel}
             </span>
-             <span className="text-tertiary">•</span>
+             <span className="text-tertiary">
+               •
+             </span>
              <span className="text-tertiary">{timeContext}</span>
           </div>
-          
-          {/* Reliability - Visible at a glance */}
           <div className={`flex items-center space-x-1.5 ${isStrong ? 'opacity-100' : 'opacity-80'}`}>
              <div className={`w-1.5 h-1.5 rounded-full ${isStrong ? 'bg-strong' : 'bg-moderate'}`} />
-             <span className={`${isStrong ? 'text-strong' : 'text-moderate'} font-medium`}>
-               {narrative.reliability_label}
+             <span className={`${isStrong ? 'text-strong' : 'text-moderate'} font-medium`} title={narrative.reliability_label === 'STRONG' ? 'High consistency across trusted sources.' : 'Partial confirmation with remaining uncertainty.'}>
+               {narrative.reliability_label === 'WEAK' ? 'Low confirmation' : narrative.reliability_label}
              </span>
           </div>
         </div>
-
-        {/* Content: Title */}
-        {/* "Short, factual, no adjectives" */}
         <h3 className={`font-sans text-sm font-medium leading-relaxed tracking-wide ${isStrong ? 'text-primary' : 'text-secondary'}`}>
           {narrative.topic}
         </h3>
-        
       </Card>
     </Link>
   )

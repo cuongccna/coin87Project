@@ -9,6 +9,8 @@ from app.api.v1.decision_risk import router as decision_risk_router
 from app.api.v1.institutional_memory import router as institutional_memory_router
 from app.api.v1.market_intel import router as market_intel_router
 from app.api.v1.narratives import router as narratives_router
+from app.api.v1.inversion_feeds import router as inversion_feeds_router
+from app.api.v1.inversion_stream import router as inversion_stream_router
 
 
 router = APIRouter()
@@ -17,4 +19,6 @@ router.include_router(decision_risk_router, prefix="/decision", tags=["decision-
 router.include_router(narratives_router, prefix="/decision", tags=["narratives"])
 router.include_router(institutional_memory_router, prefix="/decision", tags=["institutional-memory"])
 router.include_router(market_intel_router, prefix="/market", tags=["market-intel"])
+router.include_router(inversion_feeds_router, prefix="/inversion-feeds", tags=["inversion-feeds"])
+router.include_router(inversion_stream_router, prefix="", tags=["inversion-stream"])
 

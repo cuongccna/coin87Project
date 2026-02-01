@@ -1,0 +1,22 @@
+[
+  {
+    "external_id": "sample-001",
+    "source_id": "11111111-1111-1111-1111-111111111111",
+    "symbol": "BTC",
+    "feed_type": "price-inversion",
+    "direction": "down",
+    "value": 23750.5,
+    "confidence": 0.85,
+    "payload": {"note": "manual test entry"}
+  },
+  {
+    "external_id": "sample-002",
+    "source_id": "22222222-2222-2222-2222-222222222222",
+    "symbol": "ETH",
+    "feed_type": "price-inversion",
+    "direction": "up",
+    "value": 1630.2,
+    "confidence": 0.65,
+    "payload": {"note": "manual test entry 2"}
+  }
+]
