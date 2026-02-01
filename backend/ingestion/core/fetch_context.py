@@ -17,11 +17,13 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
+import logging
 
 import httpx
 from ingestion.core.state import PostgresStateStore, FetchOutcome, SourceState
 from ingestion.core.identity import COMMON_HEADERS_CHROME_WIN, COMMON_HEADERS_FIREFOX_MAC
 
+logger = logging.getLogger("coin87.ingestion.fetch")
 
 DEFAULT_USER_AGENTS: list[str] = [
     # Conservative UAs (no headless).
@@ -134,6 +136,7 @@ class FetchContext:
         proxies = None
         if proxy_url:
             proxies = {"http://": proxy_url, "https://": proxy_url}
+            logger.info(f"Connecting to {source.key} via proxy: {proxy_url}")
 
         meta: dict[str, Any] = {"source_key": source.key, "url": source.url, "proxy": bool(proxy_url)}
         
@@ -153,6 +156,7 @@ class FetchContext:
             except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as e:
                 # Fallback to direct connection if proxy fails
                 if proxies:
+                    logger.warning(f"Proxy connection failed ({e}). Falling back to direct connection for {source.key}.")
                     meta["proxy_failed"] = True
                     meta["proxy_error"] = str(e)
                     # Retry without proxies
@@ -171,29 +175,29 @@ class FetchContext:
             
             # Handling status codes
             if resp.status_code == 304:
-                    outcome = FetchOutcome.SUCCESS
-                    # Content not modified, return validation but no text (adapters handle None text as empty)
-                    return 304, None, meta
+                outcome = FetchOutcome.SUCCESS
+                # Content not modified, return validation but no text (adapters handle None text as empty)
+                return 304, None, meta
 
-                if resp.status_code in (403, 429):
-                    outcome = FetchOutcome.SOFT_BLOCK if resp.status_code == 429 else FetchOutcome.HARD_BLOCK
-                    
-                    # Try to parse Retry-After header
-                    retry_after = resp.headers.get("Retry-After")
-                    if retry_after:
-                        try:
-                            seconds = int(retry_after)
-                            next_run = datetime.now(timezone.utc) + timedelta(seconds=seconds)
-                        except ValueError:
-                            pass # Date format not parsed
+            if resp.status_code in (403, 429):
+                outcome = FetchOutcome.SOFT_BLOCK if resp.status_code == 429 else FetchOutcome.HARD_BLOCK
+                
+                # Try to parse Retry-After header
+                retry_after = resp.headers.get("Retry-After")
+                if retry_after:
+                    try:
+                        seconds = int(retry_after)
+                        next_run = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+                    except ValueError:
+                        pass # Date format not parsed
 
-                    return resp.status_code, None, meta
+                return resp.status_code, None, meta
 
-                if resp.status_code >= 400:
-                    outcome = FetchOutcome.TRANSIENT_ERROR
-                    return resp.status_code, None, meta
+            if resp.status_code >= 400:
+                outcome = FetchOutcome.TRANSIENT_ERROR
+                return resp.status_code, None, meta
 
-                # SUCCESS 200
+            # SUCCESS 200
                 outcome = FetchOutcome.SUCCESS
                 new_etag = resp.headers.get("ETag")
                 new_last_mod = resp.headers.get("Last-Modified")
