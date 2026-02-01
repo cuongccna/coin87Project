@@ -274,6 +274,9 @@ add_cron_if_missing() {
 # Run Ingestion every 5 minutes (Smart Rate Control handles actual execution)
 add_cron_if_missing "*/5 * * * *" "$APP_DIR/backend/scripts/run_ingestion.sh"
 
+# Run AI Enrichment every 15 minutes (Processes fetched content)
+add_cron_if_missing "*/15 * * * *" "$APP_DIR/backend/scripts/run_ai_enrichment.sh"
+
 # Run Derive Task every 10 minutes
 add_cron_if_missing "*/10 * * * *" "$APP_DIR/backend/scripts/run_derive_risk.sh"
 
