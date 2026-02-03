@@ -2,15 +2,11 @@ sources:
   # ─────────────────────────────────────────────────────────────
   # Tier 1: Major Crypto News (High Authority / Original Reporting)
   # ─────────────────────────────────────────────────────────────
-  # Fields:
-  #   - fetch_strategy: "scored" (default) | "always" | "never"
-  #   - worth_click_keywords: Optional list để boost score
-  # ─────────────────────────────────────────────────────────────
   coindesk_rss:
     enabled: true
     type: rss
     name: CoinDesk
-    url: https://www.coindesk.com/arc/outboundfeeds/rss/
+    url: https://www.coindesk.com/arc/outboundfeeds/rss
     rate_limit_seconds: 1800
     proxy: true
     priority: high
@@ -41,15 +37,38 @@ sources:
     priority: high
     tier: 1
 
-  theblock_research_rss:
-    enabled: false
+  # [NEW] The Defiant - Chuyên sâu về DeFi & Open Economy
+  thedefiant_rss:
+    enabled: true
     type: rss
-    name: The Block Research
-    url: https://www.theblock.co/rss/research.xml
+    name: The Defiant
+    url: https://thedefiant.io/feed
     rate_limit_seconds: 3600
     proxy: true
     priority: high
     tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - yield
+      - defi
+      - hack
+      - airdrop
+
+  # [NEW] Bankless - Định hình Narrative & Strategy
+  bankless_rss:
+    enabled: true
+    type: rss
+    name: Bankless
+    url: https://www.bankless.com/rss/feed
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - strategy
+      - layer2
+      - adoption
 
   decrypt_rss:
     enabled: true
@@ -76,7 +95,7 @@ sources:
     enabled: true
     type: rss
     name: Bitcoin Magazine
-    url: https://bitcoinmagazine.com/.rss/full/
+    url: https://bitcoinmagazine.com/feed
     rate_limit_seconds: 3600
     proxy: true
     detailed_fetch: true
@@ -93,11 +112,6 @@ sources:
     priority: high
     tier: 1
     fetch_strategy: scored
-    worth_click_keywords:
-      - regulation
-      - SEC
-      - institutional
-      - ETF
 
   blockworks_rss:
     enabled: true
@@ -123,11 +137,6 @@ sources:
     proxy: true
     priority: high
     tier: 1
-    fetch_strategy: scored
-    worth_click_keywords:
-      - investigation
-      - regulation
-      - interview
 
   protos_rss:
     enabled: true
@@ -139,10 +148,6 @@ sources:
     priority: high
     tier: 1
     fetch_strategy: scored
-    worth_click_keywords:
-      - investigation
-      - fraud
-      - regulation
 
   bitcoindotcom_rss:
     enabled: true
@@ -159,6 +164,49 @@ sources:
   # ─────────────────────────────────────────────────────────────
   # Tier 2: Aggregators & On-chain / Market Intelligence
   # ─────────────────────────────────────────────────────────────
+
+  # [NEW] Arthur Hayes (BitMEX) - Macro Narrative & Smart Money
+  arthur_hayes_rss:
+    enabled: true
+    type: rss
+    name: Arthur Hayes (Cryptohayes)
+    url: https://blog.bitmex.com/feed/
+    rate_limit_seconds: 21600 # 6 tiếng check 1 lần vì ít bài
+    proxy: true
+    priority: high
+    tier: 2
+    fetch_strategy: always
+    worth_click_keywords:
+      - macro
+      - fed
+      - liquidity
+
+  # [NEW] Kaiko Research - Dữ liệu thanh khoản & Market Depth
+  kaiko_research_rss:
+    enabled: true
+    type: rss
+    name: Kaiko Research
+    url: https://research.kaiko.com/rss
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+
+  # [NEW] Token Terminal - Phân tích cơ bản (Fundamental)
+  token_terminal_rss:
+    enabled: true
+    type: rss
+    name: Token Terminal
+    url: https://tokenterminal.com/resources/rss.xml
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    worth_click_keywords:
+      - revenue
+      - fees
+      - valuation
 
   cryptopanic_rss:
     enabled: true
@@ -215,14 +263,26 @@ sources:
     priority: low
     tier: 2
 
-  coingape_rss:
-    enabled: false
+  # [NEW] BeInCrypto - Tin tức tổng hợp toàn cầu
+  beincrypto_rss:
+    enabled: true
     type: rss
-    name: CoinGape
-    url: https://coingape.com/feed/
-    rate_limit_seconds: 7200
-    proxy: false
-    priority: low
+    name: BeInCrypto
+    url: https://beincrypto.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+
+  # [NEW] The Daily Hodl - Tin tức thị trường & Cá voi
+  dailyhodl_rss:
+    enabled: true
+    type: rss
+    name: The Daily Hodl
+    url: https://dailyhodl.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
     tier: 2
 
   coingecko_blog_rss:
@@ -235,25 +295,17 @@ sources:
     priority: medium
     tier: 2
     fetch_strategy: scored
-    worth_click_keywords:
-      - market
-      - data
-      - analysis
 
   santiment_insights_rss:
     enabled: true
     type: rss
     name: Santiment Insights
-    url: https://insights.santiment.net/feed
+    url: https://santiment.net/insights/feed/
     rate_limit_seconds: 3600
     proxy: true
     priority: medium
     tier: 2
     fetch_strategy: scored
-    worth_click_keywords:
-      - on-chain
-      - whale
-      - metric
 
   dune_blog_rss:
     enabled: true
@@ -270,16 +322,12 @@ sources:
     enabled: true
     type: rss
     name: Nansen Research
-    url: https://www.nansen.ai/research/rss
+    url: https://www.nansen.ai/rss.xml
     rate_limit_seconds: 7200
     proxy: true
     priority: medium
     tier: 2
     fetch_strategy: scored
-    worth_click_keywords:
-      - whale
-      - smart money
-      - on-chain
 
   intotheblock_blog_rss:
     enabled: true
@@ -296,6 +344,17 @@ sources:
   # ─────────────────────────────────────────────────────────────
   # Tier 3: Protocol / Technical / Early Signals
   # ─────────────────────────────────────────────────────────────
+
+  # [NEW] Ethereum Foundation - Tin tức chính chủ từ Dev Team
+  ethereum_foundation_rss:
+    enabled: true
+    type: rss
+    name: Ethereum Foundation
+    url: https://blog.ethereum.org/feed.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: high
+    tier: 3
 
   github_bitcoin_releases:
     enabled: true
@@ -343,7 +402,7 @@ sources:
     name: L2BEAT Blog
     url: https://l2beat.mirror.xyz/feed.xml
     rate_limit_seconds: 7200
-    proxy: false
+    proxy: true
     priority: low
     tier: 3
 
@@ -351,46 +410,34 @@ sources:
     enabled: true
     type: rss
     name: Flashbots Blog
-    url: https://writings.flashbots.net/rss/
+    url: https://writings.flashbots.net/feed.xml
     rate_limit_seconds: 10800
     proxy: false
     priority: medium
     tier: 3
     fetch_strategy: scored
-    worth_click_keywords:
-      - MEV
-      - block building
-      - auction
 
   a16z_crypto_rss:
     enabled: true
     type: rss
     name: a16z Crypto
-    url: https://a16zcrypto.com/posts/feed/
+    url: https://a16zcrypto.com/feed/
     rate_limit_seconds: 10800
     proxy: false
     priority: medium
     tier: 3
     fetch_strategy: scored
-    worth_click_keywords:
-      - research
-      - regulation
-      - infrastructure
 
   paradigm_research_rss:
     enabled: true
     type: rss
     name: Paradigm Research
-    url: https://www.paradigm.xyz/writing/rss
+    url: https://www.paradigm.xyz/feed.xml
     rate_limit_seconds: 10800
     proxy: false
     priority: medium
     tier: 3
     fetch_strategy: scored
-    worth_click_keywords:
-      - research
-      - protocol
-      - MEV
 
   vitalik_blog_rss:
     enabled: true
@@ -402,10 +449,6 @@ sources:
     priority: high
     tier: 3
     fetch_strategy: always
-    worth_click_keywords:
-      - ethereum
-      - roadmap
-      - scaling
 
   bitcoin_optech_rss:
     enabled: true
@@ -483,31 +526,15 @@ sources:
     priority: low
     tier: 4
 
-  bitcointalk_announcements_rss:
-    enabled: false
-    type: rss
-    name: Bitcointalk Announcements
-    url: https://bitcointalk.org/index.php?board=159.0;.xml
-    rate_limit_seconds: 10800
-    proxy: false
-    priority: low
-    tier: 4
-    # Note: High noise, disabled by default
-
   mirror_crypto_digest_rss:
     enabled: true
     type: rss
     name: Mirror.xyz Crypto Digest
     url: https://mirror.xyz/feed/explore
     rate_limit_seconds: 7200
-    proxy: false
+    proxy: true
     priority: low
     tier: 4
-
-
-  # ─────────────────────────────────────────────────────────────
-  # Tier 5: Telegram (Skeleton / Future)
-  # ─────────────────────────────────────────────────────────────
 
   telegram_skeleton:
     enabled: false
@@ -518,21 +545,3 @@ sources:
     proxy: false
     priority: low
     tier: 5
-
-
-# ─────────────────────────────────────────────────────────────
-# Notes:
-# - Tier 1: Narrative authority & original reporting
-# - Tier 2: Aggregation + on-chain intelligence
-# - Tier 3: Early protocol / technical signals
-# - Tier 4: Crowd sentiment (noise-filtered)
-# - Tier 5: Reserved for private / semi-private feeds
-#
-# Recommended Trust Weights:
-#   Tier 1 = 1.00
-#   Tier 2 = 0.65
-#   Tier 3 = 0.45
-#   Tier 4 = 0.25
-# ─────────────────────────────────────────────────────────────
-
-
