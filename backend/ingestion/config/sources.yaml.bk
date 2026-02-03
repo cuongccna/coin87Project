@@ -1,0 +1,537 @@
+sources:
+  # ─────────────────────────────────────────────────────────────
+  # Tier 1: Major Crypto News (High Authority / Original Reporting)
+  # ─────────────────────────────────────────────────────────────
+  # Fields:
+  #   - fetch_strategy: "scored" (default) | "always" | "never"
+  #   - worth_click_keywords: Optional list để boost score
+  # ─────────────────────────────────────────────────────────────
+  coindesk_rss:
+    enabled: true
+    type: rss
+    name: CoinDesk
+    url: https://www.coindesk.com/arc/outboundfeeds/rss/
+    rate_limit_seconds: 1800
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - regulation
+      - SEC
+      - ETF
+
+  cointelegraph_markets_rss:
+    enabled: true
+    type: rss
+    name: Cointelegraph Markets
+    url: https://cointelegraph.com/rss/tag/markets
+    rate_limit_seconds: 1800
+    proxy: true
+    priority: high
+    tier: 1
+
+  theblock_rss:
+    enabled: true
+    type: rss
+    name: The Block
+    url: https://www.theblock.co/rss.xml
+    rate_limit_seconds: 1800
+    proxy: true
+    priority: high
+    tier: 1
+
+  theblock_research_rss:
+    enabled: false
+    type: rss
+    name: The Block Research
+    url: https://www.theblock.co/rss/research.xml
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
+
+  decrypt_rss:
+    enabled: true
+    type: rss
+    name: Decrypt
+    url: https://decrypt.co/feed
+    rate_limit_seconds: 3600
+    proxy: true
+    detailed_fetch: true
+    priority: medium
+    tier: 1
+
+  dlnews_rss:
+    enabled: true
+    type: rss
+    name: DL News
+    url: https://www.dlnews.com/rss/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
+
+  bitcoinmagazine_rss:
+    enabled: true
+    type: rss
+    name: Bitcoin Magazine
+    url: https://bitcoinmagazine.com/.rss/full/
+    rate_limit_seconds: 3600
+    proxy: true
+    detailed_fetch: true
+    priority: medium
+    tier: 1
+
+  cryptoslate_rss:
+    enabled: true
+    type: rss
+    name: CryptoSlate
+    url: https://cryptoslate.com/feed/
+    rate_limit_seconds: 1800
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - regulation
+      - SEC
+      - institutional
+      - ETF
+
+  blockworks_rss:
+    enabled: true
+    type: rss
+    name: Blockworks
+    url: https://blockworks.co/feed
+    rate_limit_seconds: 1800
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - institutional
+      - trading
+      - market structure
+
+  unchained_rss:
+    enabled: true
+    type: rss
+    name: Unchained (Laura Shin)
+    url: https://unchainedcrypto.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - investigation
+      - regulation
+      - interview
+
+  protos_rss:
+    enabled: true
+    type: rss
+    name: Protos
+    url: https://protos.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: high
+    tier: 1
+    fetch_strategy: scored
+    worth_click_keywords:
+      - investigation
+      - fraud
+      - regulation
+
+  bitcoindotcom_rss:
+    enabled: true
+    type: rss
+    name: Bitcoin.com News
+    url: https://news.bitcoin.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 1
+    fetch_strategy: scored
+
+
+  # ─────────────────────────────────────────────────────────────
+  # Tier 2: Aggregators & On-chain / Market Intelligence
+  # ─────────────────────────────────────────────────────────────
+
+  cryptopanic_rss:
+    enabled: true
+    type: rss
+    name: CryptoPanic (Filtered)
+    url: https://cryptopanic.com/feed/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+    filters:
+      min_source_rank: 8
+      exclude_categories:
+        - sponsored
+        - promotion
+
+  glassnode_insights_rss:
+    enabled: true
+    type: rss
+    name: Glassnode Insights
+    url: https://insights.glassnode.com/rss/
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+
+  cryptoquant_blog_rss:
+    enabled: true
+    type: rss
+    name: CryptoQuant Blog
+    url: https://cryptoquant.com/blog/rss.xml
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+
+  messari_blog_rss:
+    enabled: true
+    type: rss
+    name: Messari Blog
+    url: https://messari.io/rss
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+
+  newsbtc_rss:
+    enabled: true
+    type: rss
+    name: NewsBTC
+    url: https://www.newsbtc.com/feed/
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 2
+
+  coingape_rss:
+    enabled: false
+    type: rss
+    name: CoinGape
+    url: https://coingape.com/feed/
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 2
+
+  coingecko_blog_rss:
+    enabled: true
+    type: rss
+    name: CoinGecko Blog
+    url: https://www.coingecko.com/buzz/feed
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+    worth_click_keywords:
+      - market
+      - data
+      - analysis
+
+  santiment_insights_rss:
+    enabled: true
+    type: rss
+    name: Santiment Insights
+    url: https://insights.santiment.net/feed
+    rate_limit_seconds: 3600
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+    worth_click_keywords:
+      - on-chain
+      - whale
+      - metric
+
+  dune_blog_rss:
+    enabled: true
+    type: rss
+    name: Dune Analytics Blog
+    url: https://dune.com/blog/rss.xml
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+
+  nansen_research_rss:
+    enabled: true
+    type: rss
+    name: Nansen Research
+    url: https://www.nansen.ai/research/rss
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+    worth_click_keywords:
+      - whale
+      - smart money
+      - on-chain
+
+  intotheblock_blog_rss:
+    enabled: true
+    type: rss
+    name: IntoTheBlock Blog
+    url: https://blog.intotheblock.com/rss/
+    rate_limit_seconds: 7200
+    proxy: true
+    priority: medium
+    tier: 2
+    fetch_strategy: scored
+
+
+  # ─────────────────────────────────────────────────────────────
+  # Tier 3: Protocol / Technical / Early Signals
+  # ─────────────────────────────────────────────────────────────
+
+  github_bitcoin_releases:
+    enabled: true
+    type: github
+    name: Bitcoin Core Releases
+    url: https://github.com/bitcoin/bitcoin/releases.atom
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 3
+
+  github_ethereum_releases:
+    enabled: true
+    type: github
+    name: Go-Ethereum Releases
+    url: https://github.com/ethereum/go-ethereum/releases.atom
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 3
+
+  bitcoin_dev_mailing_list:
+    enabled: true
+    type: rss
+    name: Bitcoin Dev Mailing List
+    url: https://gnusha.org/pi/bitcoindev/new.atom
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: low
+    tier: 3
+
+  ethereum_magicians_rss:
+    enabled: true
+    type: rss
+    name: Ethereum Magicians
+    url: https://ethereum-magicians.org/latest.rss
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: low
+    tier: 3
+
+  l2beat_blog_rss:
+    enabled: true
+    type: rss
+    name: L2BEAT Blog
+    url: https://l2beat.mirror.xyz/feed.xml
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 3
+
+  flashbots_blog_rss:
+    enabled: true
+    type: rss
+    name: Flashbots Blog
+    url: https://writings.flashbots.net/rss/
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+    worth_click_keywords:
+      - MEV
+      - block building
+      - auction
+
+  a16z_crypto_rss:
+    enabled: true
+    type: rss
+    name: a16z Crypto
+    url: https://a16zcrypto.com/posts/feed/
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+    worth_click_keywords:
+      - research
+      - regulation
+      - infrastructure
+
+  paradigm_research_rss:
+    enabled: true
+    type: rss
+    name: Paradigm Research
+    url: https://www.paradigm.xyz/writing/rss
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+    worth_click_keywords:
+      - research
+      - protocol
+      - MEV
+
+  vitalik_blog_rss:
+    enabled: true
+    type: rss
+    name: Vitalik's Blog
+    url: https://vitalik.eth.limo/feed.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: high
+    tier: 3
+    fetch_strategy: always
+    worth_click_keywords:
+      - ethereum
+      - roadmap
+      - scaling
+
+  bitcoin_optech_rss:
+    enabled: true
+    type: rss
+    name: Bitcoin Optech Newsletter
+    url: https://bitcoinops.org/feed.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: medium
+    tier: 3
+    fetch_strategy: scored
+
+
+  # ─────────────────────────────────────────────────────────────
+  # Tier 4: Social Sentiment (Reddit)
+  # ─────────────────────────────────────────────────────────────
+
+  reddit_cryptocurrency:
+    enabled: true
+    type: reddit
+    name: r/CryptoCurrency
+    url: reddit://r/cryptocurrency?limit=25&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: medium
+    tier: 4
+
+  reddit_bitcoin:
+    enabled: true
+    type: reddit
+    name: r/Bitcoin
+    url: reddit://r/bitcoin?limit=20&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: medium
+    tier: 4
+
+  reddit_ethereum:
+    enabled: true
+    type: reddit
+    name: r/Ethereum
+    url: reddit://r/ethereum?limit=20&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 4
+
+  reddit_ethfinance:
+    enabled: true
+    type: reddit
+    name: r/EthFinance
+    url: reddit://r/ethfinance?limit=15&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: medium
+    tier: 4
+
+  reddit_cryptotechnology:
+    enabled: true
+    type: reddit
+    name: r/CryptoTechnology
+    url: reddit://r/cryptotechnology?limit=15&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 4
+
+  reddit_wallstreetbetscrypto:
+    enabled: true
+    type: reddit
+    name: r/WallStreetBetsCrypto
+    url: reddit://r/wallstreetbetscrypto?limit=10&sort=hot
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 4
+
+  bitcointalk_announcements_rss:
+    enabled: false
+    type: rss
+    name: Bitcointalk Announcements
+    url: https://bitcointalk.org/index.php?board=159.0;.xml
+    rate_limit_seconds: 10800
+    proxy: false
+    priority: low
+    tier: 4
+    # Note: High noise, disabled by default
+
+  mirror_crypto_digest_rss:
+    enabled: true
+    type: rss
+    name: Mirror.xyz Crypto Digest
+    url: https://mirror.xyz/feed/explore
+    rate_limit_seconds: 7200
+    proxy: false
+    priority: low
+    tier: 4
+
+
+  # ─────────────────────────────────────────────────────────────
+  # Tier 5: Telegram (Skeleton / Future)
+  # ─────────────────────────────────────────────────────────────
+
+  telegram_skeleton:
+    enabled: false
+    type: telegram
+    name: Telegram (Skeleton)
+    url: ""
+    rate_limit_seconds: 3600
+    proxy: false
+    priority: low
+    tier: 5
+
+
+# ─────────────────────────────────────────────────────────────
+# Notes:
+# - Tier 1: Narrative authority & original reporting
+# - Tier 2: Aggregation + on-chain intelligence
+# - Tier 3: Early protocol / technical signals
+# - Tier 4: Crowd sentiment (noise-filtered)
+# - Tier 5: Reserved for private / semi-private feeds
+#
+# Recommended Trust Weights:
+#   Tier 1 = 1.00
+#   Tier 2 = 0.65
+#   Tier 3 = 0.45
+#   Tier 4 = 0.25
+# ─────────────────────────────────────────────────────────────
+
