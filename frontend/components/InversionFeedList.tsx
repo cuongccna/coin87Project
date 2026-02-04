@@ -198,49 +198,43 @@ export default function InversionFeedList({ initialItems, total, currentPage }: 
             const iconOpacity = isInfo ? "opacity-50 grayscale" : "opacity-100";
 
             return (
-                <div key={item.id} className={`relative group border rounded-lg p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-sm ${cardOpacity}`}>
+                <div key={item.id} className={`relative group border rounded-lg p-4 sm:p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-sm ${cardOpacity}`}>
                     {/* Top Row: Symbol & Risk Badge */}
-                    <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-xl font-bold tracking-tight text-white">{item.symbol}</h3>
+                    <div className="flex justify-between items-start mb-3 gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                            <h3 className="text-lg sm:text-xl font-bold tracking-tight text-white">{item.symbol}</h3>
                             <RiskBadge level={riskLevel} />
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                             <IRIDots score={iriScore} />
-                            <div className="text-xs font-mono text-tertiary">
+                            <div className="text-xs font-mono text-tertiary whitespace-nowrap">
                                 {new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                             </div>
                         </div>
                     </div>
 
-                    {/* Middle: Narrative Summary */}
-                    <div className="mb-4 pr-12">
-                        <div className="flex gap-3 items-start">
-                            <span className={`text-2xl mt-0.5 ${iconOpacity}`} title="Feed Type">{feedIcon}</span>
-                            <p className="text-gray-300 font-medium leading-relaxed">
+                    {/* Middle: Narrative Summary (Simplified) */}
+                    <div className="mb-3 pr-8 sm:pr-12">
+                        <div className="flex gap-2 sm:gap-3 items-start">
+                            <span className={`text-xl sm:text-2xl mt-0.5 flex-shrink-0 ${iconOpacity}`} title="Feed Type">{feedIcon}</span>
+                            <p className="text-gray-300 text-sm sm:text-base font-medium leading-relaxed line-clamp-3">
                                 {summary}
                             </p>
                         </div>
                     </div>
 
-                    {/* Bottom: Why Shown + Metadata */}
-                    <div className="flex justify-between items-end border-t border-border/30 pt-3 mt-2">
-                        <div className="flex flex-col gap-1">
-                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">[Shown because]</span>
-                                <span className="text-xs text-indigo-300 bg-indigo-900/20 px-1.5 py-0.5 rounded">
-                                    {whyShown}
-                                </span>
-                             </div>
-                             <div className="mt-1 text-xs text-gray-500 truncate max-w-sm ml-1 opacity-70">
-                                Source: {p.source || 'Unknown'}
+                    {/* Bottom: Minimal Metadata & Confidence */}
+                    <div className="flex justify-between items-end border-t border-border/30 pt-3 mt-2 gap-3">
+                        <div className="flex flex-col gap-1 min-w-0">
+                             <div className="text-xs text-gray-500 truncate max-w-[200px] opacity-70">
+                                Source: <span className="text-primary font-medium">{p.source || 'Unknown'}</span>
                              </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-1">
-                             <div className="text-[10px] text-tertiary uppercase tracking-wider">Assessment Confidence</div>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                             <div className="text-[10px] text-tertiary uppercase tracking-wider">Risk Score</div>
                              <div className="text-sm font-bold text-gray-200">
-                                {((item.confidence || 0.8) * 100).toFixed(0)}%
+                                {Math.min(5, Math.max(1, p.iri_score || 3))}/5
                              </div>
                              <Link 
                                 href={`/inversion/${item.id}`}
@@ -254,29 +248,29 @@ export default function InversionFeedList({ initialItems, total, currentPage }: 
         })}
         
         {initialItems.length === 0 && (
-            <div className="text-center text-tertiary py-12 border border-dashed border-border rounded-lg bg-surface/30">
-                <p>No active narrative risks detected.</p>
-                <p className="text-sm mt-2">Market appears consensus-driven.</p>
+            <div className="text-center text-tertiary py-8 sm:py-12 border border-dashed border-border rounded-lg bg-surface/30">
+                <p className="text-sm sm:text-base">No active narrative risks detected.</p>
+                <p className="text-xs sm:text-sm mt-2">Market appears consensus-driven.</p>
             </div>
         )}
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex justify-between items-center pt-4 border-t border-border">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-border">
         <button
           disabled={currentPage <= 1}
           onClick={handlePrevPage}
-          className="px-4 py-2 border border-border rounded disabled:opacity-50 text-sm font-medium hover:bg-surface transition"
+          className="px-3 sm:px-4 py-2 border border-border rounded disabled:opacity-50 text-xs sm:text-sm font-medium hover:bg-surface transition w-full sm:w-auto"
         >
-            Previous
+            ← Previous
         </button>
-        <span className="text-xs text-tertiary font-mono">Page {currentPage}</span>
+        <span className="text-xs text-tertiary font-mono">Page {currentPage} of {Math.ceil(total / 20)}</span>
         <button
             disabled={currentPage * 20 >= total}
             onClick={handleNextPage}
-          className="px-4 py-2 border border-border rounded disabled:opacity-50 text-sm font-medium hover:bg-surface transition"
+          className="px-3 sm:px-4 py-2 border border-border rounded disabled:opacity-50 text-xs sm:text-sm font-medium hover:bg-surface transition w-full sm:w-auto"
         >
-            Next
+            Next →
         </button>
       </div>
     </div>

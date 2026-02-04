@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import SessionLocal
 from app.models.information_event import InformationEvent
+from app.models.information_event_enrichment import InformationEventEnrichment
 from app.models.inversion_feed import InversionFeed
 from app.services.redis_client import get_redis
 from derive.lib.inversion_hints import pick_hint_for_text
@@ -148,9 +149,10 @@ def process_promotion(limit: int = 50):
         promoted_stmt = select(InversionFeed.source_id).where(InversionFeed.source_id.is_not(None))
         existing_source_ids = set(db.scalars(promoted_stmt).all())
 
-        # 2. Get Recent Information Events
-        events = (
-            db.query(InformationEvent)
+        # 2. Get Recent Information Events with Enrichment
+        results = (
+            db.query(InformationEvent, InformationEventEnrichment)
+            .outerjoin(InformationEventEnrichment, InformationEvent.id == InformationEventEnrichment.information_event_id)
             .order_by(InformationEvent.observed_at.desc())
             .limit(limit * 2) 
             .all()
@@ -159,7 +161,7 @@ def process_promotion(limit: int = 50):
         count = 0
         redis_client = get_redis()
         
-        for ev in events:
+        for ev, enrichment in results:
             if count >= limit:
                 break
             
@@ -173,6 +175,29 @@ def process_promotion(limit: int = 50):
             
             # Risk Analysis (The Jewish Logic Layer)
             risk_data = analyze_narrative_risk(ev.title, sentiment)
+            
+            # Override with AI enrichment if available (Expectation Gap V2)
+            if enrichment and enrichment.narrative_analysis:
+                na = enrichment.narrative_analysis
+                # Use AI insights if present
+                if na.get("expected_mechanism"):
+                    risk_data["expectation_gap"] = na["expected_mechanism"]
+                if na.get("trapped_persona"):
+                    risk_data["trapped_persona"] = na["trapped_persona"]
+                
+                # Refine Inversion Summary with invalidation signal
+                if na.get("invalidation_signal"):
+                    # We keep the summary punchy, maybe prepend validaton failure
+                    risk_data["inversion_summary"] = f"Trap Signal: {na['invalidation_signal']}"
+
+                # Use AI-determined sentiment/risk if high confidence
+                if enrichment.confidence and enrichment.confidence > 0.7:
+                    if enrichment.sentiment == 'bullish':
+                        risk_data["risk_level"] = "LOW"
+                    elif enrichment.sentiment == 'bearish':
+                        risk_data["risk_level"] = "HIGH"
+                    risk_data["iri_score"] = int(enrichment.confidence * 5)  # 0.8 -> 4, 0.9 -> 4
+
             
             # Map Risk Level to 'direction' field temporarily for backward compat compatibility
             # Let's use 'direction' for Risk Level (HIGH, MED, LOW) as requested in Plan.
@@ -203,7 +228,7 @@ def process_promotion(limit: int = 50):
                 feed_type="narrative_risk", # Changed from news-analysis
                 direction=risk_code, 
                 value=None, 
-                confidence=0.8, 
+                confidence=min(1.0, max(0.0, (feed_payload.get("iri_score", 3) / 5.0))),  # Risk Index to 0-1 scale
                 payload=feed_payload,
                 status="processed" # Immediately ready
             )

@@ -72,6 +72,12 @@ class InformationEventEnrichment(Base):
         comment="Content category: regulation|technology|market|security|other"
     )
 
+    narrative_analysis = Column(
+        JSONB,
+        nullable=True,
+        comment="Advanced analysis: expected_mechanism, invalidation_signal, trapped_persona"
+    )
+
     # Worth-Click Scoring
     worth_click_score = Column(
         Float,

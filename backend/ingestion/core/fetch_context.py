@@ -194,19 +194,24 @@ class FetchContext:
         proxy_url = self.proxy_url_for(source)
         proxies = None
         if proxy_url:
+            # Normalize common proxy schemes to what httpx expects.
+            # httpx may not accept 'socks5h://' string in some environments; convert to 'socks5://'.
+            if proxy_url.startswith("socks5h://"):
+                proxy_url = "socks5://" + proxy_url[len("socks5h://"):]
+
             # Handle SOCKS5 vs HTTP proxies
             if proxy_url.startswith("socks5"):
                 # httpx-socks requires mounting specific transport or passing proxies dict differently
                 # But httpx natively supports 'socks5://' in `proxies` dict if httpx-socks is installed.
-                # However, httpx expects schema keys to be protocols like 'http://' and 'https://',
+                # httpx expects schema keys to be protocols like 'http://' and 'https://',
                 # and the value to be the proxy URL.
                 proxies = {
-                    "http://": proxy_url, 
-                    "https://": proxy_url
+                    "http://": proxy_url,
+                    "https://": proxy_url,
                 }
             else:
                 proxies = {"http://": proxy_url, "https://": proxy_url}
-            
+
             logger.info(f"Connecting to {source.key} via proxy: {proxy_url}")
 
         meta: dict[str, Any] = {"source_key": source.key, "url": source.url, "proxy": bool(proxy_url)}

@@ -121,37 +121,11 @@ echo ">>> Checking Node.js..."
 node -v
 npm -v
 
-# 2.5 Setup Nginx
-echo ">>> Setting up Nginx..."
-if ! command -v nginx &> /dev/null; then
-    echo "Installing Nginx..."
-    sudo apt-get install -y nginx
-fi
 
-# Copy Nginx Config
-if [ -f "config/nginx/cbottrading.cloud.conf" ]; then
-    echo "Configuring Nginx for cbottrading.cloud..."
-    sudo cp config/nginx/cbottrading.cloud.conf /etc/nginx/sites-available/cbottrading.cloud
-    
-    # Symlink if not exists
-    if [ ! -f "/etc/nginx/sites-enabled/cbottrading.cloud" ]; then
-        sudo ln -s /etc/nginx/sites-available/cbottrading.cloud /etc/nginx/sites-enabled/
-    fi
-    
-    # Ensure webroot for Certbot exists
-    if [ ! -d "/var/www/html" ]; then
-        echo "Creating /var/www/html for Certbot..."
-        sudo mkdir -p /var/www/html
-        sudo chown -R $USER:$USER /var/www/html
-        sudo chmod -R 755 /var/www/html
-    fi
-    
-    # Test and Reload
-    sudo nginx -t && sudo systemctl reload nginx
-    echo "Nginx configured successfully."
-else
-    echo "WARNING: Nginx config file not found!"
-fi
+# 2.5 Setup Nginx (Skipped)
+# echo ">>> Setting up Nginx..."
+# Nginx setup removed to avoid errors
+
 
 # 3. Setup Backend
 echo ">>> Setting up Backend..."

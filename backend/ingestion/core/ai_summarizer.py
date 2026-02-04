@@ -28,6 +28,10 @@ class ContentAnalysis:
     keywords: List[str]  # Keywords chính
     category: str  # Loại tin: regulation|technology|market|security|other
     reasoning: Optional[str] = None  # AI reasoning (debug)
+    # Expectation Gap fields
+    expected_mechanism: Optional[str] = None  # "Spot CVD spike > 5M within 1 hour"
+    invalidation_signal: Optional[str] = None # "Price pumps but Open Interest drops"
+    trapped_persona: Optional[str] = None     # "Late FOMO buyers"
 
 
 class GeminiSummarizer:
@@ -128,7 +132,10 @@ Provide your analysis in the following JSON format (strictly follow this structu
   "confidence": 0.85,
   "keywords": ["key", "topics", "from", "article"],
   "category": "regulation|technology|market|security|other",
-  "reasoning": "Brief explanation of your sentiment assessment"
+  "reasoning": "Brief explanation of your sentiment assessment",
+  "expected_mechanism": "What MUST happen on-chain if this news is genuine? e.g., 'Spot CVD spike > 5M within 1 hour'",
+  "invalidation_signal": "Signs that this is a trap/fakeout? e.g., 'Price pumps but Open Interest drops (Short covering only)'",
+  "trapped_persona": "Who is likely to be trapped? e.g., 'Late FOMO buyers', 'Panic sellers'"
 }}
 
 Rules:
@@ -139,6 +146,9 @@ Rules:
 - keywords: 3-8 main topics
 - category: Pick ONE most relevant category
 - reasoning: 1-2 sentences explaining sentiment
+- expected_mechanism: 1 sentence describing expected market reaction if true
+- invalidation_signal: 1 sentence describing confirmation failure (the trap)
+- trapped_persona: 1 short phrase identifying the victim of market inefficiency
 
 Return ONLY the JSON, no additional text."""
 
@@ -170,6 +180,9 @@ Return ONLY the JSON, no additional text."""
                 keywords=data.get("keywords", [])[:10],  # Max 10 keywords
                 category=data.get("category", "other"),
                 reasoning=data.get("reasoning"),
+                expected_mechanism=data.get("expected_mechanism"),
+                invalidation_signal=data.get("invalidation_signal"),
+                trapped_persona=data.get("trapped_persona"),
             )
             
         except Exception as e:
@@ -210,6 +223,9 @@ Return ONLY the JSON, no additional text."""
             keywords=[],
             category="other",
             reasoning="Fallback heuristic analysis (AI unavailable)",
+            expected_mechanism=None,
+            invalidation_signal=None,
+            trapped_persona=None,
         )
 
 

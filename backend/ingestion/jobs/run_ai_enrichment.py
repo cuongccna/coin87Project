@@ -110,6 +110,11 @@ def process_unenriched_events(
                 confidence=analysis.confidence,
                 keywords=analysis.keywords,
                 category=analysis.category,
+                narrative_analysis={
+                    "expected_mechanism": analysis.expected_mechanism,
+                    "invalidation_signal": analysis.invalidation_signal,
+                    "trapped_persona": analysis.trapped_persona
+                } if analysis.expected_mechanism else None,
                 # worth_click_score sẽ được set bởi RSS adapter
                 # filter_decision sẽ được set bởi RSS adapter
             )
